@@ -13,6 +13,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [btnHovered, setBtnHovered] = useState(false);
+  const [eyeHovered, setEyeHovered] = useState(false);
+  const [forgotHovered, setForgotHovered] = useState(false);
+  const [signupHovered, setSignupHovered] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,91 +41,316 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 right-1/3 w-[500px] h-[400px] bg-brand-600/8 rounded-full blur-[100px]" />
-      </div>
+    <>
+      <style>{`
+        @keyframes blob-drift-1 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+          33% { transform: translate(30px, -20px) scale(1.05); opacity: 0.65; }
+          66% { transform: translate(-15px, 15px) scale(0.97); opacity: 0.45; }
+        }
+        @keyframes blob-drift-2 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+          33% { transform: translate(-25px, 20px) scale(1.08); opacity: 0.55; }
+          66% { transform: translate(20px, -10px) scale(0.95); opacity: 0.35; }
+        }
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
-            <span className="font-display text-white text-sm">U</span>
+      <div style={{
+        minHeight: "100vh",
+        background: "#080C14",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}>
+        {/* Animated background glow blobs */}
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+        }}>
+          <div style={{
+            position: "absolute",
+            top: "-80px",
+            right: "-80px",
+            width: "520px",
+            height: "420px",
+            borderRadius: "50%",
+            background: "radial-gradient(ellipse at center, rgba(59,130,246,0.18) 0%, rgba(99,102,241,0.10) 50%, transparent 70%)",
+            filter: "blur(60px)",
+            animation: "blob-drift-1 12s ease-in-out infinite",
+          }} />
+          <div style={{
+            position: "absolute",
+            bottom: "-100px",
+            left: "-80px",
+            width: "480px",
+            height: "400px",
+            borderRadius: "50%",
+            background: "radial-gradient(ellipse at center, rgba(99,102,241,0.14) 0%, rgba(59,130,246,0.08) 50%, transparent 70%)",
+            filter: "blur(70px)",
+            animation: "blob-drift-2 15s ease-in-out infinite",
+          }} />
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "600px",
+            height: "300px",
+            borderRadius: "50%",
+            background: "radial-gradient(ellipse at center, rgba(37,99,235,0.05) 0%, transparent 70%)",
+            filter: "blur(80px)",
+          }} />
+        </div>
+
+        <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "420px" }}>
+          {/* Logo */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            justifyContent: "center",
+            marginBottom: "32px",
+          }}>
+            <div style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "8px",
+              background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 20px rgba(59,130,246,0.4)",
+              border: "1px solid rgba(59,130,246,0.3)",
+            }}>
+              <span style={{ color: "#fff", fontSize: "15px", fontWeight: 700, letterSpacing: "-0.5px" }}>U</span>
+            </div>
+            <span style={{
+              color: "#F8FAFC",
+              fontSize: "22px",
+              fontWeight: 700,
+              letterSpacing: "-0.5px",
+            }}>Umbra</span>
           </div>
-          <span className="font-display text-2xl text-white tracking-tight">Umbra</span>
-        </div>
 
-        <div className="bg-white rounded-2xl shadow-modal p-8 animate-slide-up">
-          <h1 className="font-display text-3xl text-slate-900 mb-1">Welcome back</h1>
-          <p className="text-sm text-slate-500 mb-6">Sign in to your workspace.</p>
+          {/* Card */}
+          <div style={{
+            background: "#0D1525",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.08)",
+            padding: "36px",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.3), 0 24px 48px rgba(0,0,0,0.4), 0 0 80px rgba(59,130,246,0.04)",
+            animation: "slide-up 0.35s ease-out both",
+          }}>
+            <h1 style={{
+              color: "#F8FAFC",
+              fontSize: "26px",
+              fontWeight: 700,
+              letterSpacing: "-0.5px",
+              marginBottom: "6px",
+              marginTop: 0,
+            }}>Welcome back</h1>
+            <p style={{ color: "#94A3B8", fontSize: "14px", marginBottom: "24px", marginTop: 0 }}>
+              Sign in to your workspace.
+            </p>
 
-          {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="label">Email</label>
-              <input
-                type="email"
-                placeholder="you@company.com"
-                className="input"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="label mb-0">Password</label>
-                <Link href="/forgot-password" className="text-xs text-brand-600 hover:text-brand-700">
-                  Forgot password?
-                </Link>
+            {error && (
+              <div style={{
+                marginBottom: "16px",
+                borderRadius: "8px",
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.3)",
+                padding: "10px 14px",
+                fontSize: "13px",
+                color: "#fca5a5",
+              }}>
+                {error}
               </div>
-              <div className="relative">
+            )}
+
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <label style={{
+                  display: "block",
+                  color: "#94A3B8",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  marginBottom: "6px",
+                }}>Email</label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Your password"
-                  className="input pr-10"
+                  type="email"
+                  placeholder="you@company.com"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    background: "rgba(255,255,255,0.04)",
+                    border: emailFocused ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: "8px",
+                    padding: "10px 14px",
+                    color: "#F8FAFC",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxShadow: emailFocused ? "0 0 0 3px rgba(59,130,246,0.15)" : "none",
+                    transition: "border-color 0.15s, box-shadow 0.15s",
+                  }}
                 />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  onClick={() => setShowPassword((p) => !p)}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary w-full py-3 justify-center text-base disabled:opacity-60"
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Sign in</span>
-                  <ArrowRight size={17} />
-                </>
-              )}
-            </button>
-          </form>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                  <label style={{
+                    color: "#94A3B8",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}>Password</label>
+                  <Link
+                    href="/forgot-password"
+                    style={{
+                      fontSize: "12px",
+                      color: forgotHovered ? "#60a5fa" : "#3b82f6",
+                      textDecoration: "none",
+                      transition: "color 0.15s",
+                    }}
+                    onMouseEnter={() => setForgotHovered(true)}
+                    onMouseLeave={() => setForgotHovered(false)}
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Your password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      background: "rgba(255,255,255,0.04)",
+                      border: passwordFocused ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: "8px",
+                      padding: "10px 40px 10px 14px",
+                      color: "#F8FAFC",
+                      fontSize: "14px",
+                      outline: "none",
+                      boxShadow: passwordFocused ? "0 0 0 3px rgba(59,130,246,0.15)" : "none",
+                      transition: "border-color 0.15s, box-shadow 0.15s",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    onMouseEnter={() => setEyeHovered(true)}
+                    onMouseLeave={() => setEyeHovered(false)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: eyeHovered ? "#94A3B8" : "#475569",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      transition: "color 0.15s",
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
 
-          <p className="text-xs text-center text-slate-400 mt-5">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-brand-600 hover:text-brand-700 font-medium">
-              Get started free
-            </Link>
-          </p>
+              <button
+                type="submit"
+                disabled={isLoading}
+                onMouseEnter={() => setBtnHovered(true)}
+                onMouseLeave={() => setBtnHovered(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  width: "100%",
+                  padding: "12px",
+                  background: btnHovered && !isLoading
+                    ? "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)"
+                    : "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)",
+                  border: "1px solid rgba(59,130,246,0.3)",
+                  borderRadius: "8px",
+                  color: "#fff",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  cursor: isLoading ? "not-allowed" : "pointer",
+                  opacity: isLoading ? 0.7 : 1,
+                  boxShadow: btnHovered && !isLoading
+                    ? "0 0 24px rgba(59,130,246,0.35), 0 4px 12px rgba(0,0,0,0.3)"
+                    : "0 0 12px rgba(59,130,246,0.15), 0 2px 6px rgba(0,0,0,0.2)",
+                  transition: "background 0.2s, box-shadow 0.2s, opacity 0.15s",
+                }}
+              >
+                {isLoading ? (
+                  <div style={{
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid rgba(255,255,255,0.25)",
+                    borderTopColor: "#fff",
+                    borderRadius: "50%",
+                    animation: "spin 0.7s linear infinite",
+                  }} />
+                ) : (
+                  <>
+                    <span>Sign in</span>
+                    <ArrowRight size={17} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p style={{ fontSize: "13px", textAlign: "center", color: "#475569", marginTop: "20px", marginBottom: 0 }}>
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/signup"
+                style={{
+                  color: signupHovered ? "#60a5fa" : "#3b82f6",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={() => setSignupHovered(true)}
+                onMouseLeave={() => setSignupHovered(false)}
+              >
+                Get started free
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
