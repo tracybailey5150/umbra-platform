@@ -1,76 +1,58 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, Filter, ArrowRight, Download, Plus } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
+import { Search, Filter, ArrowRight, Download, Plus, Copy, Check } from "lucide-react";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const LEADS = [
-  {
-    id: "l1", name: "Marcus T.", email: "marcus@example.com", phone: "(555) 012-3456",
-    request: "Roof replacement, 2,400 sqft, asphalt shingles",
-    agent: "Roofing Quote Agent", score: 87, status: "quoted",
-    estimatedValue: 18500, assignedTo: "Sarah M.", submittedAt: "2h ago",
-    initials: "MT", color: "#6366F1",
-  },
-  {
-    id: "l2", name: "Sarah K.", email: "sarah@example.com", phone: "(555) 234-5678",
-    request: "HVAC installation, 3-bedroom home, full system replacement",
-    agent: "HVAC Quote Agent", score: 72, status: "reviewing",
-    estimatedValue: 9200, assignedTo: "Tom B.", submittedAt: "3h ago",
-    initials: "SK", color: "#F59E0B",
-  },
-  {
-    id: "l3", name: "James R.", email: "james@example.com", phone: "(555) 345-6789",
-    request: "Kitchen remodel, semi-custom cabinets, granite counters, approx $80k budget",
-    agent: "Remodel Quote Agent", score: 91, status: "new",
-    estimatedValue: 78000, assignedTo: null, submittedAt: "4h ago",
-    initials: "JR", color: "#10B981",
-  },
-  {
-    id: "l4", name: "Priya M.", email: "priya@example.com", phone: "(555) 456-7890",
-    request: "Landscaping design and install, 0.5 acre backyard, full design + labor",
-    agent: "Landscaping Agent", score: 64, status: "new",
-    estimatedValue: null, assignedTo: null, submittedAt: "6h ago",
-    initials: "PM", color: "#8B5CF6",
-  },
-  {
-    id: "l5", name: "Tom W.", email: "tom@example.com", phone: "(555) 567-8901",
-    request: "Commercial painting, 4,000 sqft office, 2 coats, need done in 3 weeks",
-    agent: "Painting Quote Agent", score: 78, status: "reviewing",
-    estimatedValue: 22000, assignedTo: "Lisa P.", submittedAt: "8h ago",
-    initials: "TW", color: "#EC4899",
-  },
-  {
-    id: "l6", name: "Elena V.", email: "elena@example.com", phone: "(555) 678-9012",
-    request: "Deck build, 400 sqft composite, pergola add-on, permit required",
-    agent: "Carpentry Agent", score: 83, status: "quoted",
-    estimatedValue: 34000, assignedTo: "Tom B.", submittedAt: "1d ago",
-    initials: "EV", color: "#14B8A6",
-  },
-  {
-    id: "l7", name: "Robert C.", email: "robert@example.com", phone: "(555) 789-0123",
-    request: "Concrete driveway replacement, 2-car width, approx 800 sqft",
-    agent: "Concrete Agent", score: 55, status: "new",
-    estimatedValue: null, assignedTo: null, submittedAt: "1d ago",
-    initials: "RC", color: "#F97316",
-  },
-  {
-    id: "l8", name: "Nancy P.", email: "nancy@example.com", phone: "(555) 890-1234",
-    request: "Bathroom remodel, master bath, freestanding tub, custom tile",
-    agent: "Remodel Quote Agent", score: 88, status: "accepted",
-    estimatedValue: 42000, assignedTo: "Sarah M.", submittedAt: "2d ago",
-    initials: "NP", color: "#A78BFA",
-  },
+interface LeadRow {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  request: string;
+  agent: string;
+  agentSlug: string;
+  score: number;
+  status: string;
+  estimatedValue: number | null;
+  assignedTo: string | null;
+  submittedAt: string;
+  initials: string;
+  color: string;
+}
+
+// ─── Color palette for avatars ────────────────────────────────────────────────
+
+const AVATAR_COLORS = [
+  "#6366F1", "#F59E0B", "#10B981", "#8B5CF6",
+  "#EC4899", "#14B8A6", "#F97316", "#A78BFA",
 ];
 
-const STATUS_TABS = [
-  { label: "All", value: "all", count: 8 },
-  { label: "New", value: "new", count: 3 },
-  { label: "Reviewing", value: "reviewing", count: 2 },
-  { label: "Quoted", value: "quoted", count: 2 },
-  { label: "Accepted", value: "accepted", count: 1 },
-];
+function avatarColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -82,6 +64,7 @@ function StatusBadge({ status }: { status: string }) {
     accepted:  ["rgba(16,185,129,0.12)",  "#34D399", "Accepted"],
     declined:  ["rgba(239,68,68,0.12)",   "#F87171", "Declined"],
     closed:    ["rgba(71,85,105,0.2)",    "#64748B", "Closed"],
+    archived:  ["rgba(71,85,105,0.2)",    "#64748B", "Archived"],
   };
   const [bg, color, label] = map[status] ?? ["rgba(71,85,105,0.2)", "#64748B", status];
   return (
@@ -111,16 +94,123 @@ function ScoreRing({ score }: { score: number }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LeadsPage() {
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [firstAgentSlug, setFirstAgentSlug] = useState<string>("");
 
-  const filtered = LEADS.filter((l) => {
+  const fetchLeads = useCallback(async () => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // Fetch submissions with related agent + lead data
+    const { data, error } = await supabase
+      .from("submissions")
+      .select(`
+        id, status, submitter_name, submitter_email, submitter_phone,
+        raw_data, created_at, deleted_at,
+        agents!inner(id, name, slug, type),
+        leads(id, score, estimated_value, name, email)
+      `)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error("Failed to fetch leads:", error);
+      setLoading(false);
+      return;
+    }
+
+    const rows: LeadRow[] = (data ?? []).map((row: any) => {
+      const agent = Array.isArray(row.agents) ? row.agents[0] : row.agents;
+      const lead = Array.isArray(row.leads) ? row.leads[0] : row.leads;
+      const name = row.submitter_name ?? lead?.name ?? "Unknown";
+      const email = row.submitter_email ?? lead?.email ?? "";
+      const rawDesc = typeof row.raw_data === "object" && row.raw_data !== null
+        ? (row.raw_data as any).description ?? ""
+        : "";
+
+      return {
+        id: row.id,
+        name,
+        email,
+        phone: row.submitter_phone ?? null,
+        request: rawDesc,
+        agent: agent?.name ?? "Unknown Agent",
+        agentSlug: agent?.slug ?? "",
+        score: lead?.score ?? 0,
+        status: row.status ?? "new",
+        estimatedValue: lead?.estimated_value ? parseFloat(lead.estimated_value) : null,
+        assignedTo: null,
+        submittedAt: row.created_at,
+        initials: getInitials(name),
+        color: avatarColor(name + email),
+      };
+    });
+
+    setLeads(rows);
+
+    // Track the first agent slug for the "Copy link" button
+    if (rows.length > 0 && rows[0].agentSlug) {
+      setFirstAgentSlug(rows[0].agentSlug);
+    } else {
+      // Fallback: fetch the first active agent
+      const { data: agentData } = await supabase
+        .from("agents")
+        .select("slug")
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      if (agentData?.slug) setFirstAgentSlug(agentData.slug);
+    }
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
+
+  // ─── Filter logic ──────────────────────────────────────────────────────────
+  const filtered = leads.filter((l) => {
     const matchTab = activeTab === "all" || l.status === activeTab;
-    const matchSearch = search === "" || l.name.toLowerCase().includes(search.toLowerCase()) ||
-      l.email.toLowerCase().includes(search.toLowerCase()) ||
-      l.request.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchSearch =
+      q === "" ||
+      l.name.toLowerCase().includes(q) ||
+      l.email.toLowerCase().includes(q) ||
+      l.request.toLowerCase().includes(q) ||
+      l.agent.toLowerCase().includes(q);
     return matchTab && matchSearch;
   });
+
+  const statusCounts: Record<string, number> = { all: leads.length };
+  leads.forEach((l) => {
+    statusCounts[l.status] = (statusCounts[l.status] ?? 0) + 1;
+  });
+
+  const STATUS_TABS = [
+    { label: "All", value: "all" },
+    { label: "New", value: "new" },
+    { label: "Reviewing", value: "reviewing" },
+    { label: "Quoted", value: "quoted" },
+    { label: "Accepted", value: "accepted" },
+  ];
+
+  // ─── Copy intake link ──────────────────────────────────────────────────────
+  function copyIntakeLink() {
+    const slug = firstAgentSlug || "your-agent";
+    const url = `${window.location.origin}/submit/${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }
 
   return (
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
@@ -131,10 +221,27 @@ export default function LeadsPage() {
             Leads & Requests
           </h1>
           <p style={{ fontSize: "13px", color: "#475569", marginTop: "4px", margin: "4px 0 0" }}>
-            {LEADS.length} total submissions across all agents
+            {loading ? "Loading…" : `${leads.length} total submissions across all agents`}
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Copy intake link */}
+          <button
+            onClick={copyIntakeLink}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              padding: "9px 14px", borderRadius: "8px",
+              background: copied ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${copied ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.1)"}`,
+              color: copied ? "#34D399" : "#94A3B8",
+              fontSize: "13px", fontWeight: 600, cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? "Copied!" : "Copy intake link"}
+          </button>
+
           <button style={{
             display: "inline-flex", alignItems: "center", gap: "6px",
             padding: "9px 14px", borderRadius: "8px",
@@ -169,7 +276,7 @@ export default function LeadsPage() {
             <Search size={14} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#475569" }} />
             <input
               type="text"
-              placeholder="Search leads by name, email, request..."
+              placeholder="Search leads by name, email, request…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -215,7 +322,7 @@ export default function LeadsPage() {
                   background: activeTab === tab.value ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)",
                   color: activeTab === tab.value ? "#A5B4FC" : "#334155",
                 }}>
-                  {tab.count}
+                  {statusCounts[tab.value] ?? 0}
                 </span>
               </button>
             ))}
@@ -229,22 +336,81 @@ export default function LeadsPage() {
         border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
         boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
       }}>
-        {/* Column headers */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 80px 80px 90px 32px",
-          gap: "12px", padding: "10px 22px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(255,255,255,0.02)",
-        }}>
-          {["Lead", "Request", "Agent", "Score", "Value", "Status", ""].map((h) => (
-            <div key={h} style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              {h}
+        {/* Loading skeleton */}
+        {loading && (
+          <div style={{ padding: "48px 24px", textAlign: "center" }}>
+            <div style={{
+              width: "28px", height: "28px",
+              border: "3px solid rgba(59,130,246,0.15)",
+              borderTopColor: "#3b82f6",
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+              margin: "0 auto 12px",
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <p style={{ fontSize: "13px", color: "#334155" }}>Loading leads…</p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && leads.length === 0 && (
+          <div style={{ padding: "64px 24px", textAlign: "center" }}>
+            <div style={{
+              width: "52px", height: "52px", borderRadius: "50%",
+              background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 16px",
+            }}>
+              <Plus size={22} color="#6366F1" />
             </div>
-          ))}
-        </div>
+            <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#CBD5E1", margin: "0 0 8px" }}>
+              No leads yet
+            </h3>
+            <p style={{ fontSize: "13px", color: "#334155", marginBottom: "20px" }}>
+              Share your intake form to get started
+            </p>
+            <button
+              onClick={copyIntakeLink}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                padding: "10px 20px", borderRadius: "8px",
+                background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+                color: "#fff", fontSize: "13px", fontWeight: 600,
+                border: "none", cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
+              }}
+            >
+              <Copy size={14} />
+              Copy intake form link
+            </button>
+          </div>
+        )}
+
+        {/* Column headers */}
+        {!loading && filtered.length > 0 && (
+          <div style={{
+            display: "grid", gridTemplateColumns: "1.5fr 2fr 1fr 80px 80px 90px 32px",
+            gap: "12px", padding: "10px 22px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.02)",
+          }}>
+            {["Lead", "Request", "Agent", "Score", "Value", "Status", ""].map((h) => (
+              <div key={h} style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                {h}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* No results (filtered but have leads) */}
+        {!loading && leads.length > 0 && filtered.length === 0 && (
+          <div style={{ padding: "40px 24px", textAlign: "center" }}>
+            <p style={{ fontSize: "13px", color: "#334155" }}>No leads match your current filters.</p>
+          </div>
+        )}
 
         {/* Rows */}
-        {filtered.map((lead) => (
+        {!loading && filtered.map((lead) => (
           <Link
             key={lead.id}
             href={`/leads/${lead.id}`}
@@ -277,7 +443,9 @@ export default function LeadsPage() {
               overflow: "hidden", display: "-webkit-box",
               WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
               lineHeight: "1.5",
-            }}>{lead.request}</div>
+            }}>
+              {lead.request || <span style={{ color: "#1E293B", fontStyle: "italic" }}>No description</span>}
+            </div>
 
             {/* Agent */}
             <div style={{ fontSize: "11px", color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lead.agent}</div>
@@ -302,17 +470,21 @@ export default function LeadsPage() {
         ))}
 
         {/* Footer */}
-        <div style={{
-          padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between",
-          borderTop: "1px solid rgba(255,255,255,0.05)",
-        }}>
-          <span style={{ fontSize: "11px", color: "#334155" }}>Showing {filtered.length} of {LEADS.length} leads</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button style={{ padding: "4px 10px", borderRadius: "6px", background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "#334155", fontSize: "11px", cursor: "not-allowed", opacity: 0.5 }}>← Prev</button>
-            <span style={{ fontSize: "11px", color: "#475569" }}>Page 1 of 1</span>
-            <button style={{ padding: "4px 10px", borderRadius: "6px", background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "#334155", fontSize: "11px", cursor: "not-allowed", opacity: 0.5 }}>Next →</button>
+        {!loading && leads.length > 0 && (
+          <div style={{
+            padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between",
+            borderTop: "1px solid rgba(255,255,255,0.05)",
+          }}>
+            <span style={{ fontSize: "11px", color: "#334155" }}>
+              Showing {filtered.length} of {leads.length} leads
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <button style={{ padding: "4px 10px", borderRadius: "6px", background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "#334155", fontSize: "11px", cursor: "not-allowed", opacity: 0.5 }}>← Prev</button>
+              <span style={{ fontSize: "11px", color: "#475569" }}>Page 1 of 1</span>
+              <button style={{ padding: "4px 10px", borderRadius: "6px", background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "#334155", fontSize: "11px", cursor: "not-allowed", opacity: 0.5 }}>Next →</button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
