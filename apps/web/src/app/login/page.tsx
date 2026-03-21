@@ -2,17 +2,36 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { getBrowserClient } from "@umbra/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    window.location.href = "/dashboard";
+    setError(null);
+
+    const supabase = getBrowserClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
   }
 
   return (
@@ -33,10 +52,23 @@ export default function LoginPage() {
           <h1 className="font-display text-3xl text-slate-900 mb-1">Welcome back</h1>
           <p className="text-sm text-slate-500 mb-6">Sign in to your workspace.</p>
 
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label">Email</label>
-              <input type="email" placeholder="you@company.com" className="input" required />
+              <input
+                type="email"
+                placeholder="you@company.com"
+                className="input"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -51,25 +83,37 @@ export default function LoginPage() {
                   placeholder="Your password"
                   className="input pr-10"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  onClick={() => setShowPassword((p) => !p)}>
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={() => setShowPassword((p) => !p)}
+                >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <button type="submit" disabled={isLoading}
-              className="btn-primary w-full py-3 justify-center text-base disabled:opacity-60">
-              {isLoading
-                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                : <><span>Sign in</span><ArrowRight size={17} /></>
-              }
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary w-full py-3 justify-center text-base disabled:opacity-60"
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Sign in</span>
+                  <ArrowRight size={17} />
+                </>
+              )}
             </button>
           </form>
 
           <p className="text-xs text-center text-slate-400 mt-5">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-brand-600 hover:text-brand-700 font-medium">
               Get started free
             </Link>

@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { getBrowserClient } from "@umbra/auth";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<"account" | "org">("account");
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", orgName: "", industry: "",
   });
@@ -18,11 +22,54 @@ export default function SignupPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (step === "account") { setStep("org"); return; }
+    setError(null);
+
+    if (step === "account") {
+      // Step 1: create Supabase account
+      setIsLoading(true);
+      const supabase = getBrowserClient();
+      const { error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            full_name: form.fullName,
+          },
+        },
+      });
+      setIsLoading(false);
+
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+
+      setStep("org");
+      return;
+    }
+
+    // Step 2: create org, then redirect
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setIsLoading(false);
-    window.location.href = "/dashboard";
+    try {
+      const res = await fetch("/api/organizations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.orgName,
+          industry: form.industry,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error ?? `Request failed: ${res.status}`);
+      }
+
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create organization.");
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -75,6 +122,12 @@ export default function SignupPage() {
               : "Tell us about your business."}
           </p>
 
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {step === "account" ? (
               <>
@@ -118,10 +171,10 @@ export default function SignupPage() {
                   <select className="input" value={form.industry} onChange={(e) => handleChange("industry", e.target.value)} required>
                     <option value="">Select your industry</option>
                     <option>Home Services</option>
-                    <option>Construction & Remodeling</option>
+                    <option>Construction &amp; Remodeling</option>
                     <option>Real Estate</option>
                     <option>Automotive</option>
-                    <option>Equipment & Machinery</option>
+                    <option>Equipment &amp; Machinery</option>
                     <option>Other</option>
                   </select>
                 </div>
