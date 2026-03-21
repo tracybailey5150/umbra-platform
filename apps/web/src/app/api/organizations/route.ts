@@ -20,9 +20,11 @@ export async function POST(request: NextRequest) {
     const slug = slugify(name);
 
     // Check slug uniqueness
-    const existing = await db.query.organizations.findFirst({
-      where: eq(schema.organizations.slug, slug),
-    });
+    const [existing] = await db
+      .select({ id: schema.organizations.id })
+      .from(schema.organizations)
+      .where(eq(schema.organizations.slug, slug))
+      .limit(1);
     if (existing) {
       return NextResponse.json(err("This organization name is already taken"), { status: 409 });
     }
