@@ -24,7 +24,7 @@ export default function LoginPage() {
     setError(null);
 
     const supabase = getBrowserClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -35,7 +35,14 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    if (data?.session) {
+      // Small delay to ensure localStorage is written before navigation
+      await new Promise((r) => setTimeout(r, 300));
+      window.location.href = "/dashboard";
+    } else {
+      setError("Login succeeded but no session returned. Please try again.");
+      setIsLoading(false);
+    }
   }
 
   return (

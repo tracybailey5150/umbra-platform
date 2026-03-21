@@ -52,19 +52,26 @@ export function createServerClient(cookieStore: {
 
 // ─── BROWSER CLIENT ───────────────────────────────────────────────────────────
 
-let _browserClient: ReturnType<typeof import("@supabase/ssr").createBrowserClient> | null = null;
+let _browserClient: ReturnType<typeof import("@supabase/supabase-js").createClient> | null = null;
 
 /**
  * getBrowserClient — singleton Supabase client for client components.
- * Uses @supabase/ssr so sessions are stored in cookies (not localStorage),
- * making them readable by the middleware for protected route checks.
+ * Uses @supabase/supabase-js with localStorage — reliable for SPA/client-only auth.
+ * Middleware is pass-through so no need for SSR cookie-based sessions.
  */
 export function getBrowserClient() {
   if (_browserClient) return _browserClient;
-  const { createBrowserClient } = require("@supabase/ssr");
-  _browserClient = createBrowserClient(
+  const { createClient } = require("@supabase/supabase-js");
+  _browserClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: true,
+        storageKey: "umbra-auth",
+        storage: typeof window !== "undefined" ? window.localStorage : undefined,
+      },
+    }
   );
   return _browserClient!;
 }
