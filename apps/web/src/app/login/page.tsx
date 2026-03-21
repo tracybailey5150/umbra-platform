@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { getBrowserClient } from "@umbra/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -37,8 +35,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.refresh();
-    router.push("/dashboard");
+    window.location.href = "/dashboard";
   }
 
   return (
