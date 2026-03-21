@@ -16,19 +16,19 @@ const config: Config = {
         mono: ["'JetBrains Mono'", "monospace"],
       },
       colors: {
-        // Brand palette — deep slate with amber accent
+        // Brand palette — indigo/violet
         brand: {
-          50:  "#f0f4ff",
-          100: "#e0e9ff",
-          200: "#b9cbff",
-          300: "#8aa5fc",
-          400: "#5c7cf7",
-          500: "#3b5ce6",
-          600: "#2a44cc",
-          700: "#1f34a6",
-          800: "#182882",
-          900: "#111d60",
-          950: "#0a1040",
+          50:  "#eef2ff",
+          100: "#e0e7ff",
+          200: "#c7d2fe",
+          300: "#a5b4fc",
+          400: "#818cf8",
+          500: "#6366f1",
+          600: "#4f46e5",
+          700: "#4338ca",
+          800: "#3730a3",
+          900: "#312e81",
+          950: "#1e1b4b",
         },
         amber: {
           400: "#fbbf24",

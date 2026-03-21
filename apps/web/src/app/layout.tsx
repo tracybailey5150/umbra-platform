@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="font-sans bg-white text-slate-900 antialiased">
+      <body className="font-sans antialiased" style={{ background: '#070C18', color: '#F1F5F9' }}>
         {children}
       </body>
     </html>

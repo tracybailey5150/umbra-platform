@@ -3,11 +3,11 @@ import { AppSidebar, AppTopBar } from "@/components/app-sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div style={{ minHeight: '100vh', background: '#070C18' }}>
       <AppSidebar />
       <AppTopBar />
-      <main className="pl-60 pt-14 min-h-screen">
-        <div className="p-6 lg:p-8 max-w-[1280px]">
+      <main style={{ paddingLeft: '240px', paddingTop: '56px', minHeight: '100vh' }}>
+        <div style={{ padding: '32px', maxWidth: '1280px' }}>
           {children}
         </div>
       </main>
