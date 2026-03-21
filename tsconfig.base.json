@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "paths": {
+      "@umbra/ui": ["../../packages/ui/src/index.ts"],
+      "@umbra/db": ["../../packages/db/src/index.ts"],
+      "@umbra/auth": ["../../packages/auth/src/index.ts"],
+      "@umbra/agents": ["../../packages/agents/src/index.ts"],
+      "@umbra/workflows": ["../../packages/workflows/src/index.ts"],
+      "@umbra/billing": ["../../packages/billing/src/index.ts"],
+      "@umbra/shared": ["../../packages/shared/src/index.ts"]
+    }
+  }
+}
