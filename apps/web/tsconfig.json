@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@umbra/ui": ["../../packages/ui/src/index.ts"],
+      "@umbra/db": ["../../packages/db/src/index.ts"],
+      "@umbra/auth": ["../../packages/auth/src/index.ts"],
+      "@umbra/agents": ["../../packages/agents/src/index.ts"],
+      "@umbra/workflows": ["../../packages/workflows/src/index.ts"],
+      "@umbra/billing": ["../../packages/billing/src/index.ts"],
+      "@umbra/shared": ["../../packages/shared/src/index.ts"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

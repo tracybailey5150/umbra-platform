@@ -116,3 +116,4 @@ function buildDefaultSystemPrompt(type: string, industry?: string): string {
       return `You are an AI assistant${industryCtx}. Process incoming requests carefully and extract structured information. Respond only in the JSON format specified.`;
   }
 }
+export const dynamic = 'force-dynamic';

@@ -108,7 +108,7 @@ export async function requireAuth(): Promise<AuthUser> {
     redirect("/login");
   }
 
-  return user;
+  return user as AuthUser;
 }
 
 // ─── MIDDLEWARE HELPER ────────────────────────────────────────────────────────

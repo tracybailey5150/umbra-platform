@@ -95,3 +95,4 @@ export async function POST(request: NextRequest) {
  * Marks a follow-up as sent (and triggers actual send via email provider)
  * See /api/follow-ups/[id]/route.ts
  */
+export const dynamic = 'force-dynamic';
