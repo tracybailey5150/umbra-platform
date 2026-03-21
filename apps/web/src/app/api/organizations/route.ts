@@ -34,7 +34,9 @@ export async function POST(request: NextRequest) {
       const [newOrg] = await tx.insert(schema.organizations).values({
         name,
         slug,
-        brandConfig: primaryColor ? { primaryColor, industry, websiteUrl } : { industry, websiteUrl },
+        industry: industry ?? null,
+      websiteUrl: websiteUrl ?? null,
+      brandConfig: primaryColor ? { primaryColor } : null,
       }).returning();
 
       await tx.insert(schema.memberships).values({
