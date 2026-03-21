@@ -8,14 +8,26 @@ import {
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
 import { getBrowserClient } from "@umbra/auth";
+import { createClient } from "@supabase/supabase-js";
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── Live stats type ──────────────────────────────────────────────────────────
 
-const STATS = [
+interface LiveStats {
+  newSubmissions: number;
+  quoteReady: number;
+  pipelineValue: number;
+  statsLoaded: boolean;
+}
+
+// ─── Mock Data (replaced by live values after fetch) ─────────────────────────
+
+const STATS_TEMPLATE = [
   {
     label: "New Submissions",
-    value: "24",
-    delta: "+8 today",
+    valueKey: "newSubmissions" as keyof LiveStats,
+    defaultValue: "—",
+    formatValue: (v: number) => String(v),
+    delta: "live count",
     trend: "up",
     icon: Inbox,
     color: "#6366F1",
@@ -24,8 +36,10 @@ const STATS = [
   },
   {
     label: "Quote Ready",
-    value: "11",
-    delta: "45% of total",
+    valueKey: "quoteReady" as keyof LiveStats,
+    defaultValue: "—",
+    formatValue: (v: number) => String(v),
+    delta: "status: quoted",
     trend: "up",
     icon: Zap,
     color: "#F59E0B",
@@ -34,7 +48,9 @@ const STATS = [
   },
   {
     label: "Avg Response",
-    value: "2.4h",
+    valueKey: null,
+    defaultValue: "2.4h",
+    formatValue: (_v: number) => "2.4h",
     delta: "↓ 18% vs last week",
     trend: "up",
     icon: Clock,
@@ -44,8 +60,10 @@ const STATS = [
   },
   {
     label: "Pipeline Value",
-    value: "$84k",
-    delta: "+$12k this week",
+    valueKey: "pipelineValue" as keyof LiveStats,
+    defaultValue: "—",
+    formatValue: (v: number) => v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`,
+    delta: "from leads table",
     trend: "up",
     icon: DollarSign,
     color: "#8B5CF6",
@@ -134,11 +152,16 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function DashboardPage() {
   const [authChecked, setAuthChecked] = useState(false);
+  const [liveStats, setLiveStats] = useState<LiveStats>({
+    newSubmissions: 0,
+    quoteReady: 0,
+    pipelineValue: 0,
+    statsLoaded: false,
+  });
 
+  // Auth check
   useEffect(() => {
     const supabase = getBrowserClient();
-
-    // Use getUser() — makes a network call to validate token, more reliable than getSession()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
         window.location.href = "/login";
@@ -147,6 +170,52 @@ export default function DashboardPage() {
       }
     });
   }, []);
+
+  // Fetch live stats once authed
+  useEffect(() => {
+    if (!authChecked) return;
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    async function fetchStats() {
+      // New submissions (status = 'new')
+      const { count: newCount } = await supabase
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "new")
+        .is("deleted_at", null);
+
+      // Quote ready (status = 'quoted')
+      const { count: quotedCount } = await supabase
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "quoted")
+        .is("deleted_at", null);
+
+      // Pipeline value: sum of estimated_value from leads
+      const { data: leadsData } = await supabase
+        .from("leads")
+        .select("estimated_value")
+        .is("deleted_at", null);
+
+      const pipelineTotal = (leadsData ?? []).reduce((sum: number, row: any) => {
+        const val = parseFloat(row.estimated_value ?? "0");
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
+
+      setLiveStats({
+        newSubmissions: newCount ?? 0,
+        quoteReady: quotedCount ?? 0,
+        pipelineValue: pipelineTotal,
+        statsLoaded: true,
+      });
+    }
+
+    fetchStats().catch(console.error);
+  }, [authChecked]);
 
   if (!authChecked) {
     return (
@@ -193,8 +262,17 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
-        {STATS.map((s) => {
+        {STATS_TEMPLATE.map((s) => {
           const Icon = s.icon;
+          // Resolve display value: live stat or default placeholder
+          let displayValue: string;
+          if (!liveStats.statsLoaded) {
+            displayValue = "…";
+          } else if (s.valueKey !== null) {
+            displayValue = s.formatValue(liveStats[s.valueKey] as number);
+          } else {
+            displayValue = s.defaultValue;
+          }
           return (
             <div key={s.label} style={{
               background: '#0C1220', borderRadius: '14px', padding: '20px',
@@ -209,7 +287,7 @@ export default function DashboardPage() {
                 </div>
                 <ArrowUpRight size={14} color="#10B981" strokeWidth={2} />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '4px' }}>{s.value}</div>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '4px' }}>{displayValue}</div>
               <div style={{ fontSize: '12px', color: '#475569', marginBottom: '14px' }}>{s.label}</div>
               <Sparkline data={s.sparkline} color={s.color} />
               <div style={{ fontSize: '11px', color: s.color, opacity: 0.8, marginTop: '6px' }}>{s.delta}</div>

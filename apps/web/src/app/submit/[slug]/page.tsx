@@ -119,8 +119,8 @@ function AnimatedCheck() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SubmitPage({ params }: { params: { agentSlug: string } }) {
-  const { agentSlug } = params;
+export default function SubmitPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
 
   const [agent, setAgent] = useState<AgentInfo | null>(null);
   const [agentLoaded, setAgentLoaded] = useState(false);
@@ -140,14 +140,14 @@ export default function SubmitPage({ params }: { params: { agentSlug: string } }
     supabase
       .from("agents")
       .select("id, name, type, description, organization_id")
-      .eq("slug", agentSlug)
+      .eq("slug", slug)
       .eq("is_active", true)
       .maybeSingle()
       .then(({ data }) => {
         setAgent(data as AgentInfo | null);
         setAgentLoaded(true);
       });
-  }, [agentSlug]);
+  }, [slug]);
 
   const agentType = agent?.type ?? "quote";
   const smartFields = getSmartFields(agentType);
@@ -212,7 +212,7 @@ export default function SubmitPage({ params }: { params: { agentSlug: string } }
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          agentSlug,
+          slug,
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
