@@ -1,49 +1,103 @@
+"use client";
 import { CreditCard, Building2, Users, Bell, Shield, ChevronRight, CheckCircle2 } from "lucide-react";
-import { PLANS } from "@umbra/billing";
 
-const CURRENT_PLAN = PLANS.quote_agent_pro;
+const PLAN = {
+  name: "Pro Plan",
+  price: "$29/mo",
+  nextBilling: "April 1, 2026",
+  highlights: [
+    "Up to 5 AI agents",
+    "Unlimited lead submissions",
+    "AI-generated follow-ups",
+    "Email & SMS notifications",
+    "Analytics dashboard",
+  ],
+};
 
 const SETTINGS_SECTIONS = [
   { icon: Building2, label: "Organization", desc: "Name, logo, brand settings" },
-  { icon: Users, label: "Team & Permissions", desc: "Manage members and roles" },
-  { icon: Bell, label: "Notifications", desc: "Alerts, emails, and digests" },
-  { icon: Shield, label: "Security", desc: "Password, 2FA, sessions" },
+  { icon: Users,     label: "Team & Permissions", desc: "Manage members and roles" },
+  { icon: Bell,      label: "Notifications", desc: "Alerts, emails, and digests" },
+  { icon: Shield,    label: "Security", desc: "Password, 2FA, sessions" },
 ];
+
+const inputStyle = {
+  width: "100%", padding: "9px 12px", borderRadius: "8px",
+  background: "#070C18", border: "1px solid rgba(255,255,255,0.1)",
+  color: "#F1F5F9", fontSize: "13px", outline: "none",
+  boxSizing: "border-box" as const,
+};
+
+const labelStyle = {
+  display: "block", fontSize: "11px", fontWeight: 600, color: "#64748B",
+  textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: "6px",
+};
 
 export default function SettingsPage() {
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Settings & Billing</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage your organization and subscription</p>
-        </div>
+    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+      {/* Header */}
+      <div style={{ marginBottom: "28px" }}>
+        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#F1F5F9", letterSpacing: "-0.02em", margin: 0 }}>
+          Settings & Billing
+        </h1>
+        <p style={{ fontSize: "13px", color: "#475569", marginTop: "4px", margin: "4px 0 0" }}>
+          Manage your organization and subscription
+        </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Settings nav + content */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* Organization settings */}
-          <div className="card p-5">
-            <h2 className="text-sm font-semibold text-slate-800 mb-5">Organization</h2>
-            <div className="space-y-4">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "20px" }}>
+        {/* Left column */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Organization form */}
+          <div style={{
+            background: "#0C1220", borderRadius: "14px", padding: "22px",
+            border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+          }}>
+            <h2 style={{ fontSize: "14px", fontWeight: 700, color: "#F1F5F9", marginBottom: "18px", margin: "0 0 18px" }}>
+              Organization
+            </h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {/* Org name */}
               <div>
-                <label className="label">Organization name</label>
-                <input type="text" className="input" defaultValue="Acme Services" />
+                <label style={labelStyle}>Organization name</label>
+                <input type="text" defaultValue="Acme Services" style={inputStyle} />
               </div>
+
+              {/* Slug */}
               <div>
-                <label className="label">Slug (used in URLs)</label>
-                <div className="flex items-center">
-                  <span className="px-3.5 py-2.5 bg-slate-100 border border-r-0 border-slate-200 rounded-l-lg text-sm text-slate-500">
+                <label style={labelStyle}>Slug (used in URLs)</label>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span style={{
+                    padding: "9px 12px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRight: "none",
+                    borderRadius: "8px 0 0 8px",
+                    fontSize: "12px", color: "#475569",
+                    whiteSpace: "nowrap",
+                  }}>
                     umbra.ai/org/
                   </span>
-                  <input type="text" className="input rounded-l-none" defaultValue="acme-services" />
+                  <input
+                    type="text"
+                    defaultValue="acme-services"
+                    style={{
+                      ...inputStyle,
+                      borderRadius: "0 8px 8px 0",
+                      borderLeft: "none",
+                      flex: 1,
+                    }}
+                  />
                 </div>
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
+
+              {/* Industry + Timezone */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label className="label">Industry</label>
-                  <select className="input">
+                  <label style={labelStyle}>Industry</label>
+                  <select style={inputStyle}>
                     <option>Home Services</option>
                     <option>Construction</option>
                     <option>Real Estate</option>
@@ -52,8 +106,8 @@ export default function SettingsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="label">Timezone</label>
-                  <select className="input">
+                  <label style={labelStyle}>Timezone</label>
+                  <select style={inputStyle}>
                     <option>America/Chicago</option>
                     <option>America/New_York</option>
                     <option>America/Los_Angeles</option>
@@ -62,70 +116,136 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
-            <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end">
-              <button className="btn-primary py-2 text-sm">Save changes</button>
+
+            <div style={{
+              marginTop: "18px", paddingTop: "16px",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              display: "flex", justifyContent: "flex-end",
+            }}>
+              <button style={{
+                padding: "8px 18px", borderRadius: "8px",
+                background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+                color: "#fff", fontSize: "13px", fontWeight: 600,
+                border: "none", cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
+              }}>
+                Save changes
+              </button>
             </div>
           </div>
 
-          {/* Quick nav */}
-          <div className="card divide-y divide-slate-100 overflow-hidden">
-            {SETTINGS_SECTIONS.map(({ icon: Icon, label, desc }) => (
-              <button key={label} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors group">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0">
-                  <Icon size={16} />
+          {/* Settings nav */}
+          <div style={{
+            background: "#0C1220", borderRadius: "14px",
+            border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+          }}>
+            {SETTINGS_SECTIONS.map(({ icon: Icon, label, desc }, idx) => (
+              <button
+                key={label}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: "14px",
+                  padding: "16px 20px",
+                  borderBottom: idx < SETTINGS_SECTIONS.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                  background: "none", border: "none", cursor: "pointer",
+                  textAlign: "left",
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
+                onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <div style={{
+                  width: "34px", height: "34px", borderRadius: "8px",
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <Icon size={16} color="#64748B" />
                 </div>
-                <div className="text-left flex-1">
-                  <div className="text-sm font-medium text-slate-800">{label}</div>
-                  <div className="text-xs text-slate-400">{desc}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#CBD5E1" }}>{label}</div>
+                  <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>{desc}</div>
                 </div>
-                <ChevronRight size={15} className="text-slate-300 group-hover:text-slate-500 transition-colors" />
+                <ChevronRight size={15} color="#334155" />
               </button>
             ))}
           </div>
         </div>
 
-        {/* Billing sidebar */}
-        <div className="space-y-5">
+        {/* Right sidebar */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Current plan */}
-          <div className="card p-5">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Current Plan</div>
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="text-lg font-semibold text-slate-900">{CURRENT_PLAN.name}</div>
-                <div className="text-2xl font-semibold text-brand-600 mt-0.5">{CURRENT_PLAN.displayPrice}</div>
-              </div>
-              <span className="badge bg-emerald-50 text-emerald-700">Active</span>
+          <div style={{
+            background: "#0C1220", borderRadius: "14px", padding: "20px",
+            border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+          }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "14px" }}>
+              Current Plan
             </div>
-            <div className="text-xs text-slate-500 mb-5">Next billing: April 1, 2026</div>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "10px" }}>
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "#F1F5F9" }}>{PLAN.name}</div>
+                <div style={{ fontSize: "22px", fontWeight: 800, color: "#6366F1", marginTop: "2px" }}>{PLAN.price}</div>
+              </div>
+              <span style={{
+                fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "99px",
+                background: "rgba(16,185,129,0.12)", color: "#34D399",
+              }}>
+                Active
+              </span>
+            </div>
+            <div style={{ fontSize: "11px", color: "#475569", marginBottom: "16px" }}>
+              Next billing: {PLAN.nextBilling}
+            </div>
 
-            <div className="space-y-2 mb-5">
-              {CURRENT_PLAN.highlights.map((h) => (
-                <div key={h} className="flex items-center gap-2 text-xs text-slate-600">
-                  <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+              {PLAN.highlights.map((h) => (
+                <div key={h} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#94A3B8" }}>
+                  <CheckCircle2 size={13} color="#34D399" />
                   {h}
                 </div>
               ))}
             </div>
 
-            <div className="space-y-2">
-              <button className="btn-secondary w-full text-xs py-2 justify-center">
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <button style={{
+                width: "100%", padding: "8px", borderRadius: "8px",
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                color: "#94A3B8", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+              }}>
                 <CreditCard size={13} />
                 Manage billing
               </button>
-              <button className="btn-ghost w-full text-xs py-2 justify-center text-slate-500">
+              <button style={{
+                width: "100%", padding: "8px", borderRadius: "8px",
+                background: "none", border: "none",
+                color: "#475569", fontSize: "12px", cursor: "pointer",
+              }}>
                 View invoices
               </button>
             </div>
           </div>
 
           {/* Upgrade nudge */}
-          <div className="bg-brand-600 rounded-xl p-5 text-white">
-            <div className="text-xs font-semibold text-brand-200 uppercase tracking-wide mb-2">Upgrade Available</div>
-            <div className="text-sm font-semibold mb-1">White-Label Install</div>
-            <p className="text-xs text-brand-200 leading-relaxed mb-4">
+          <div style={{
+            background: "linear-gradient(135deg, #4F46E5, #7C3AED)",
+            borderRadius: "14px", padding: "20px",
+            boxShadow: "0 8px 32px rgba(99,102,241,0.3)",
+          }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "rgba(199,210,254,0.7)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+              Upgrade Available
+            </div>
+            <div style={{ fontSize: "14px", fontWeight: 700, color: "#fff", marginBottom: "6px" }}>
+              White-Label Install
+            </div>
+            <p style={{ fontSize: "12px", color: "rgba(199,210,254,0.8)", lineHeight: 1.6, marginBottom: "14px", margin: "0 0 14px" }}>
               Custom domain, unlimited agents, full white-label branding.
             </p>
-            <button className="w-full bg-white text-brand-700 text-xs font-semibold py-2 rounded-lg hover:bg-brand-50 transition-colors">
+            <button style={{
+              width: "100%", padding: "9px", borderRadius: "8px",
+              background: "#fff", color: "#4F46E5",
+              fontSize: "12px", fontWeight: 700, cursor: "pointer", border: "none",
+            }}>
               View plan details
             </button>
           </div>

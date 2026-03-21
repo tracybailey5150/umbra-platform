@@ -1,5 +1,7 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
-import { Plus, Bot, ExternalLink, Settings, Copy, ToggleLeft, ToggleRight, Zap } from "lucide-react";
+import { Plus, Bot, ExternalLink, Settings, Copy, Zap } from "lucide-react";
 
 const AGENTS = [
   {
@@ -7,145 +9,245 @@ const AGENTS = [
     submissions: 34, convRate: "24%", lastActivity: "2h ago",
     intakeUrl: "https://app.umbra.ai/submit/acme-roofing",
     description: "Handles inbound roofing quote requests for residential and light commercial.",
+    color: "#6366F1",
   },
   {
     id: "a2", name: "HVAC Quote Agent", type: "quote", isActive: true,
     submissions: 28, convRate: "18%", lastActivity: "4h ago",
     intakeUrl: "https://app.umbra.ai/submit/acme-hvac",
     description: "Captures and qualifies HVAC installation and replacement requests.",
+    color: "#F59E0B",
   },
   {
     id: "a3", name: "Remodel Quote Agent", type: "intake", isActive: true,
     submissions: 22, convRate: "27%", lastActivity: "1d ago",
     intakeUrl: "https://app.umbra.ai/submit/acme-remodel",
     description: "Kitchen and bath remodel intake — collects scope, budget, and timeline.",
+    color: "#10B981",
   },
   {
     id: "a4", name: "Follow-Up Agent", type: "follow_up", isActive: false,
     submissions: 0, convRate: "—", lastActivity: "Never",
     intakeUrl: null,
     description: "Re-engages leads that haven't responded after 3+ days. Draft only.",
+    color: "#8B5CF6",
   },
 ];
 
-const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  quote:     { label: "Quote Agent",   color: "bg-brand-50 text-brand-700" },
-  intake:    { label: "Intake Agent",  color: "bg-violet-50 text-violet-700" },
-  follow_up: { label: "Follow-Up",     color: "bg-amber-50 text-amber-700" },
+const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  quote:     { label: "Quote Agent",  color: "#60A5FA", bg: "rgba(59,130,246,0.12)" },
+  intake:    { label: "Intake Agent", color: "#A78BFA", bg: "rgba(139,92,246,0.12)" },
+  follow_up: { label: "Follow-Up",   color: "#FCD34D", bg: "rgba(245,158,11,0.12)" },
 };
 
-export default function AgentsPage() {
+function ToggleSwitch({ isOn }: { isOn: boolean }) {
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
+    <div style={{
+      width: "36px", height: "20px", borderRadius: "99px", cursor: "pointer",
+      background: isOn ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.08)",
+      border: isOn ? "1px solid rgba(99,102,241,0.5)" : "1px solid rgba(255,255,255,0.1)",
+      position: "relative", transition: "all 0.2s",
+      display: "flex", alignItems: "center", padding: "2px",
+    }}>
+      <div style={{
+        width: "14px", height: "14px", borderRadius: "50%",
+        background: isOn ? "#818CF8" : "#475569",
+        transform: isOn ? "translateX(16px)" : "translateX(0)",
+        transition: "all 0.2s",
+        boxShadow: isOn ? "0 0 6px rgba(129,140,248,0.5)" : "none",
+      }} />
+    </div>
+  );
+}
+
+export default function AgentsPage() {
+  const [agents, setAgents] = useState(AGENTS);
+
+  const toggleAgent = (id: string) => {
+    setAgents((prev) => prev.map((a) => a.id === id ? { ...a, isActive: !a.isActive } : a));
+  };
+
+  return (
+    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Agent Settings</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Configure and manage your active agents</p>
+          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#F1F5F9", letterSpacing: "-0.02em", margin: 0 }}>
+            Agent Settings
+          </h1>
+          <p style={{ fontSize: "13px", color: "#475569", marginTop: "4px", margin: "4px 0 0" }}>
+            Configure and manage your active agents
+          </p>
         </div>
-        <Link href="/agents/new" className="btn-primary">
-          <Plus size={15} />
-          New Agent
+        <Link href="/agents/new" style={{
+          display: "inline-flex", alignItems: "center", gap: "6px",
+          padding: "9px 16px", borderRadius: "8px",
+          background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+          color: "#fff", fontSize: "13px", fontWeight: 600,
+          boxShadow: "0 4px 16px rgba(99,102,241,0.3)", textDecoration: "none",
+        }}>
+          <Plus size={15} /> New Agent
         </Link>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
-        {AGENTS.map((agent) => (
-          <div key={agent.id} className="card p-5 hover:shadow-card-hover transition-all">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  agent.isActive ? "bg-brand-100 text-brand-600" : "bg-slate-100 text-slate-400"
-                }`}>
-                  <Bot size={18} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        {agents.map((agent) => {
+          const typeCfg = TYPE_CONFIG[agent.type] ?? TYPE_CONFIG.quote;
+          return (
+            <div
+              key={agent.id}
+              style={{
+                background: "#0C1220", borderRadius: "14px", padding: "20px",
+                border: "1px solid rgba(255,255,255,0.07)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{
+                    width: "36px", height: "36px", borderRadius: "10px",
+                    background: agent.isActive ? `${agent.color}18` : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${agent.isActive ? agent.color + "30" : "rgba(255,255,255,0.06)"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <Bot size={17} color={agent.isActive ? agent.color : "#334155"} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#CBD5E1" }}>{agent.name}</div>
+                    <span style={{
+                      fontSize: "10px", fontWeight: 600, padding: "2px 7px", borderRadius: "99px",
+                      background: typeCfg.bg, color: typeCfg.color, marginTop: "3px", display: "inline-block",
+                    }}>
+                      {typeCfg.label}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-slate-800 text-sm">{agent.name}</div>
-                  <span className={`badge mt-0.5 ${TYPE_LABELS[agent.type]?.color}`}>
-                    {TYPE_LABELS[agent.type]?.label}
+                <div onClick={() => toggleAgent(agent.id)} style={{ cursor: "pointer" }}>
+                  <ToggleSwitch isOn={agent.isActive} />
+                </div>
+              </div>
+
+              <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.6, marginBottom: "16px", margin: "0 0 16px" }}>
+                {agent.description}
+              </p>
+
+              {/* Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "14px" }}>
+                {[
+                  { label: "Submissions",   value: agent.submissions },
+                  { label: "Conv. Rate",    value: agent.convRate },
+                  { label: "Last Activity", value: agent.lastActivity },
+                ].map((s) => (
+                  <div key={s.label} style={{
+                    background: "rgba(255,255,255,0.03)", borderRadius: "8px", padding: "10px",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                  }}>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#CBD5E1" }}>{s.value}</div>
+                    <div style={{ fontSize: "10px", color: "#334155", marginTop: "2px" }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Intake URL */}
+              {agent.intakeUrl && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  background: "rgba(255,255,255,0.03)", borderRadius: "8px",
+                  padding: "8px 12px", marginBottom: "14px",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                }}>
+                  <span style={{ fontSize: "11px", color: "#334155", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {agent.intakeUrl}
                   </span>
+                  <button style={{ background: "none", border: "none", cursor: "pointer", color: "#475569", padding: "2px" }}>
+                    <Copy size={12} />
+                  </button>
+                  <a href={agent.intakeUrl} target="_blank" rel="noreferrer" style={{ color: "#475569", display: "flex" }}>
+                    <ExternalLink size={12} />
+                  </a>
                 </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {agent.isActive
-                  ? <ToggleRight size={22} className="text-brand-600 cursor-pointer" />
-                  : <ToggleLeft size={22} className="text-slate-300 cursor-pointer" />
-                }
+              )}
+
+              {/* Actions */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Link href={`/agents/${agent.id}`} style={{
+                  flex: 1, padding: "8px", borderRadius: "8px", textAlign: "center",
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                  color: "#94A3B8", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                  textDecoration: "none",
+                }}>
+                  <Settings size={12} /> Configure
+                </Link>
+                <Link href={`/agents/${agent.id}/preview`} style={{
+                  flex: 1, padding: "8px", borderRadius: "8px", textAlign: "center",
+                  background: "none", border: "none",
+                  color: "#475569", fontSize: "12px", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                  textDecoration: "none",
+                }}>
+                  <ExternalLink size={12} /> Preview form
+                </Link>
               </div>
             </div>
-
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed">{agent.description}</p>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {[
-                { label: "Submissions", value: agent.submissions },
-                { label: "Conv. Rate", value: agent.convRate },
-                { label: "Last Activity", value: agent.lastActivity },
-              ].map((s) => (
-                <div key={s.label} className="bg-slate-50 rounded-lg p-2.5">
-                  <div className="text-sm font-semibold text-slate-800">{s.value}</div>
-                  <div className="text-xs text-slate-400">{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Intake URL */}
-            {agent.intakeUrl && (
-              <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 mb-4">
-                <span className="text-xs text-slate-500 truncate flex-1">{agent.intakeUrl}</span>
-                <button className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
-                  <Copy size={13} />
-                </button>
-                <a
-                  href={agent.intakeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-slate-400 hover:text-brand-600 transition-colors flex-shrink-0"
-                >
-                  <ExternalLink size={13} />
-                </a>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <Link href={`/agents/${agent.id}`} className="btn-secondary flex-1 py-2 text-xs justify-center">
-                <Settings size={13} />
-                Configure
-              </Link>
-              <Link href={`/agents/${agent.id}/preview`} className="btn-ghost flex-1 py-2 text-xs justify-center">
-                <ExternalLink size={13} />
-                Preview form
-              </Link>
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Create new agent CTA */}
-        <Link
-          href="/agents/new"
-          className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-brand-300 hover:text-brand-500 transition-colors min-h-[200px] group"
+        <Link href="/agents/new" style={{
+          borderRadius: "14px", padding: "32px",
+          border: "2px dashed rgba(255,255,255,0.08)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px",
+          color: "#334155", minHeight: "200px", cursor: "pointer", textDecoration: "none",
+          transition: "all 0.2s",
+        }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)";
+            e.currentTarget.style.color = "#6366F1";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+            e.currentTarget.style.color = "#334155";
+          }}
         >
-          <div className="w-10 h-10 rounded-xl border-2 border-dashed border-current flex items-center justify-center group-hover:border-brand-400 transition-colors">
+          <div style={{
+            width: "40px", height: "40px", borderRadius: "10px",
+            border: "2px dashed currentColor",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
             <Plus size={20} />
           </div>
-          <div className="text-sm font-medium">Create a new agent</div>
-          <div className="text-xs text-center max-w-[160px] text-slate-400">
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "inherit" }}>Create a new agent</div>
+          <div style={{ fontSize: "11px", textAlign: "center", maxWidth: "160px", color: "#475569" }}>
             Quote, intake, or follow-up agents for any workflow
           </div>
         </Link>
       </div>
 
       {/* Future agents notice */}
-      <div className="mt-8 bg-slate-900 rounded-2xl p-6 text-white">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-            <Zap size={16} className="text-amber-400" />
+      <div style={{
+        marginTop: "24px",
+        background: "linear-gradient(135deg, #0F172A, #1E1B4B)",
+        borderRadius: "14px", padding: "24px",
+        border: "1px solid rgba(99,102,241,0.2)",
+        boxShadow: "0 4px 32px rgba(99,102,241,0.1)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+          <div style={{
+            width: "32px", height: "32px", borderRadius: "8px",
+            background: "rgba(255,255,255,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Zap size={16} color="#FCD34D" />
           </div>
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Coming Soon — Phase 2</div>
+          <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            Coming Soon — Phase 2
+          </div>
         </div>
-        <h3 className="font-display text-2xl mb-2">Persistent Buyer Agents</h3>
-        <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.02em", margin: "0 0 8px" }}>
+          Persistent Buyer Agents
+        </h3>
+        <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.65, margin: 0, maxWidth: "520px" }}>
           Buyer agents that run continuously — searching, scoring, monitoring, and alerting — until the right match is found.
           Car, property, land, equipment, jewelry, and more.
         </p>

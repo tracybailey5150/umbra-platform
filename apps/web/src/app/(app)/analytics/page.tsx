@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, Zap, Users, DollarSign } from "lucide-react";
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
 const WEEKLY_SUBMISSIONS = [
-  { week: "Feb 17", submissions: 18, quoted: 9, won: 2 },
+  { week: "Feb 17", submissions: 18, quoted: 9,  won: 2 },
   { week: "Feb 24", submissions: 23, quoted: 12, won: 4 },
   { week: "Mar 3",  submissions: 19, quoted: 8,  won: 3 },
   { week: "Mar 10", submissions: 31, quoted: 16, won: 5 },
@@ -14,11 +14,11 @@ const WEEKLY_SUBMISSIONS = [
 ];
 
 const SCORE_DIST = [
-  { range: "0–20",  count: 2 },
-  { range: "21–40", count: 5 },
-  { range: "41–60", count: 8 },
-  { range: "61–80", count: 14 },
-  { range: "81–100",count: 9 },
+  { range: "0–20",   count: 2 },
+  { range: "21–40",  count: 5 },
+  { range: "41–60",  count: 8 },
+  { range: "61–80",  count: 14 },
+  { range: "81–100", count: 9 },
 ];
 
 const AGENT_PERF = [
@@ -30,24 +30,28 @@ const AGENT_PERF = [
 ];
 
 const SUMMARY_STATS = [
-  { label: "Total Submissions",  value: "118",   delta: "+14%", up: true,  icon: Zap },
-  { label: "Conversion Rate",    value: "21.2%", delta: "+3.1%",up: true,  icon: TrendingUp },
-  { label: "Avg Lead Score",     value: "76",    delta: "+4pts",up: true,  icon: Users },
-  { label: "Pipeline Value",     value: "$354k", delta: "+22%", up: true,  icon: DollarSign },
+  { label: "Total Submissions", value: "118",   delta: "+14%", up: true,  icon: Zap,       color: "#6366F1" },
+  { label: "Conversion Rate",   value: "21.2%", delta: "+3.1%",up: true,  icon: TrendingUp, color: "#10B981" },
+  { label: "Avg Lead Score",    value: "76",    delta: "+4pts",up: true,  icon: Users,      color: "#F59E0B" },
+  { label: "Pipeline Value",    value: "$354k", delta: "+22%", up: true,  icon: DollarSign, color: "#8B5CF6" },
 ];
 
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-card p-3 text-xs">
-      <div className="font-semibold text-slate-700 mb-2">{label}</div>
-      {payload.map((p: any) => (
-        <div key={p.name} className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-slate-500 capitalize">{p.name}:</span>
-          <span className="font-medium text-slate-800">{p.value}</span>
+    <div style={{
+      background: "#0C1220", border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: "8px", padding: "10px 12px",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+    }}>
+      <div style={{ fontSize: "11px", fontWeight: 700, color: "#94A3B8", marginBottom: "6px" }}>{label}</div>
+      {payload.map((p) => (
+        <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+          <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: p.color }} />
+          <span style={{ fontSize: "11px", color: "#64748B", textTransform: "capitalize" }}>{p.name}:</span>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#CBD5E1" }}>{p.value}</span>
         </div>
       ))}
     </div>
@@ -58,132 +62,191 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function AnalyticsPage() {
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
+    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Analytics</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Performance across all agents — last 30 days</p>
+          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#F1F5F9", letterSpacing: "-0.02em", margin: 0 }}>
+            Analytics
+          </h1>
+          <p style={{ fontSize: "13px", color: "#475569", marginTop: "4px", margin: "4px 0 0" }}>
+            Performance across all agents — last 30 days
+          </p>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <select className="input py-2 w-auto">
-            <option>Last 30 days</option>
-            <option>Last 90 days</option>
-            <option>This year</option>
-          </select>
-        </div>
+        <select style={{
+          padding: "8px 12px", borderRadius: "8px",
+          background: "#0C1220", border: "1px solid rgba(255,255,255,0.1)",
+          color: "#94A3B8", fontSize: "13px", outline: "none",
+        }}>
+          <option>Last 30 days</option>
+          <option>Last 90 days</option>
+          <option>This year</option>
+        </select>
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "24px" }}>
         {SUMMARY_STATS.map((s) => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="stat-card">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center">
-                  <Icon size={16} className="text-brand-600" />
+            <div key={s.label} style={{
+              background: "#0C1220", borderRadius: "14px", padding: "20px",
+              border: "1px solid rgba(255,255,255,0.07)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "12px" }}>
+                <div style={{
+                  width: "32px", height: "32px", borderRadius: "8px",
+                  background: `${s.color}15`,
+                  border: `1px solid ${s.color}25`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Icon size={15} color={s.color} />
                 </div>
-                <span className={`text-xs font-medium flex items-center gap-0.5 ${s.up ? "text-emerald-600" : "text-red-500"}`}>
+                <span style={{
+                  fontSize: "11px", fontWeight: 700, color: "#34D399",
+                  display: "flex", alignItems: "center", gap: "2px",
+                }}>
                   {s.up ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                   {s.delta}
                 </span>
               </div>
-              <div className="text-2xl font-semibold text-slate-900 mb-0.5">{s.value}</div>
-              <div className="text-sm text-slate-500">{s.label}</div>
+              <div style={{ fontSize: "26px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>{s.label}</div>
             </div>
           );
         })}
       </div>
 
       {/* Charts row */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
         {/* Weekly volume */}
-        <div className="card p-5">
-          <h2 className="text-sm font-semibold text-slate-800 mb-1">Weekly Submission Volume</h2>
-          <p className="text-xs text-slate-400 mb-5">Submissions, quotes sent, and deals won by week</p>
+        <div style={{
+          background: "#0C1220", borderRadius: "14px", padding: "20px",
+          border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+        }}>
+          <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 4px" }}>
+            Weekly Submission Volume
+          </h2>
+          <p style={{ fontSize: "11px", color: "#334155", marginBottom: "18px", margin: "0 0 18px" }}>
+            Submissions, quotes sent, and deals won by week
+          </p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={WEEKLY_SUBMISSIONS} barSize={10} barGap={3}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="week" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="week" tick={{ fontSize: 11, fill: "#334155" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#334155" }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="submissions" fill="#3b5ce6" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="quoted" fill="#a5b4fc" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="won" fill="#10b981" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="submissions" fill="#6366F1" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="quoted" fill="#A5B4FC" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="won" fill="#10B981" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-          <div className="flex items-center gap-5 mt-3">
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "10px" }}>
             {[
-              { label: "Submitted", color: "#3b5ce6" },
-              { label: "Quoted", color: "#a5b4fc" },
-              { label: "Won", color: "#10b981" },
+              { label: "Submitted", color: "#6366F1" },
+              { label: "Quoted",    color: "#A5B4FC" },
+              { label: "Won",       color: "#10B981" },
             ].map((l) => (
-              <div key={l.label} className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-sm" style={{ background: l.color }} />
-                <span className="text-xs text-slate-500">{l.label}</span>
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: l.color }} />
+                <span style={{ fontSize: "11px", color: "#475569" }}>{l.label}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Score distribution */}
-        <div className="card p-5">
-          <h2 className="text-sm font-semibold text-slate-800 mb-1">Lead Score Distribution</h2>
-          <p className="text-xs text-slate-400 mb-5">How AI-scored leads break down by quality range</p>
+        <div style={{
+          background: "#0C1220", borderRadius: "14px", padding: "20px",
+          border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+        }}>
+          <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 4px" }}>
+            Lead Score Distribution
+          </h2>
+          <p style={{ fontSize: "11px", color: "#334155", marginBottom: "18px", margin: "0 0 18px" }}>
+            How AI-scored leads break down by quality range
+          </p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={SCORE_DIST} barSize={28}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="range" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="range" tick={{ fontSize: 11, fill: "#334155" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#334155" }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}
-                fill="url(#scoreGrad)"
-              />
               <defs>
-                <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b5ce6" />
-                  <stop offset="100%" stopColor="#818cf8" />
+                <linearGradient id="scoreGradDark" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366F1" />
+                  <stop offset="100%" stopColor="#818CF8" />
                 </linearGradient>
               </defs>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="url(#scoreGradDark)" />
             </BarChart>
           </ResponsiveContainer>
-          <div className="mt-3 text-xs text-slate-500 text-center">
+          <div style={{ marginTop: "10px", fontSize: "11px", color: "#334155", textAlign: "center" }}>
             62% of leads score above 60 — strong intake quality
           </div>
         </div>
       </div>
 
       {/* Agent performance table */}
-      <div className="card overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="text-sm font-semibold text-slate-800">Agent Performance</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Breakdown by agent — submissions, scoring, and conversion</p>
+      <div style={{
+        background: "#0C1220", borderRadius: "14px",
+        border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+      }}>
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 2px" }}>Agent Performance</h2>
+          <p style={{ fontSize: "11px", color: "#334155", margin: 0 }}>
+            Breakdown by agent — submissions, scoring, and conversion
+          </p>
         </div>
-        <div className="divide-y divide-slate-100">
-          {/* Header */}
-          <div className="grid grid-cols-5 px-5 py-3 bg-slate-50/60">
-            {["Agent", "Submissions", "Avg Score", "Conv. Rate", "Est. Revenue"].map((h) => (
-              <div key={h} className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</div>
-            ))}
-          </div>
-          {AGENT_PERF.map((a) => (
-            <div key={a.name} className="grid grid-cols-5 px-5 py-3.5 hover:bg-slate-50 transition-colors items-center">
-              <div className="text-sm font-medium text-slate-800">{a.name}</div>
-              <div className="text-sm text-slate-600">{a.submissions}</div>
-              <div className="flex items-center gap-2">
-                <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-brand-500"
-                    style={{ width: `${a.avgScore}%` }}
-                  />
-                </div>
-                <span className="text-sm text-slate-600">{a.avgScore}</span>
-              </div>
-              <div className="text-sm font-medium text-emerald-600">{a.convRate}</div>
-              <div className="text-sm font-semibold text-slate-800">{a.revenue}</div>
+
+        {/* Header row */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1.5fr 1fr 1.5fr 1fr 1fr",
+          gap: "12px", padding: "10px 22px",
+          background: "rgba(255,255,255,0.02)",
+          borderBottom: "1px solid rgba(255,255,255,0.04)",
+        }}>
+          {["Agent", "Submissions", "Avg Score", "Conv. Rate", "Est. Revenue"].map((h) => (
+            <div key={h} style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              {h}
             </div>
           ))}
         </div>
+
+        {AGENT_PERF.map((a, idx) => (
+          <div
+            key={a.name}
+            style={{
+              display: "grid", gridTemplateColumns: "1.5fr 1fr 1.5fr 1fr 1fr",
+              gap: "12px", padding: "13px 22px", alignItems: "center",
+              borderBottom: idx < AGENT_PERF.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
+            onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#CBD5E1" }}>{a.name}</div>
+            <div style={{ fontSize: "13px", color: "#94A3B8" }}>{a.submissions}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{
+                width: "60px", height: "5px", borderRadius: "99px",
+                background: "rgba(255,255,255,0.06)", overflow: "hidden",
+              }}>
+                <div style={{
+                  height: "100%", width: `${a.avgScore}%`,
+                  borderRadius: "99px",
+                  background: a.avgScore >= 80 ? "#10B981" : a.avgScore >= 60 ? "#F59E0B" : "#EF4444",
+                }} />
+              </div>
+              <span style={{ fontSize: "13px", color: "#94A3B8" }}>{a.avgScore}</span>
+            </div>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#34D399" }}>{a.convRate}</div>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9" }}>{a.revenue}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
