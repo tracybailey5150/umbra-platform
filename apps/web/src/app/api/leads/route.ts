@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ok, err } from "@umbra/shared";
 import { getDb, schema } from "@umbra/db";
-import { eq, and, isNull, desc, asc, ilike, or, inArray, sql } from "drizzle-orm";
+import { eq, and, isNull, desc, ilike, or, inArray, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get("organizationId");
-    const status = searchParams.get("status");
     const agentId = searchParams.get("agentId");
     const assignedTo = searchParams.get("assignedTo");
     const search = searchParams.get("q");
@@ -19,28 +18,31 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getDb();
-
     const conditions: any[] = [
       eq(schema.leads.organizationId, organizationId),
       isNull(schema.leads.deletedAt),
     ];
     if (agentId) conditions.push(eq(schema.leads.agentId, agentId));
     if (assignedTo) conditions.push(eq(schema.leads.assignedToUserId, assignedTo));
-    if (search) conditions.push(
-      or(
-        ilike(schema.leads.name, `%${search}%`),
-        ilike(schema.leads.email, `%${search}%`),
-      )
-    );
+    if (search) {
+      conditions.push(
+        or(
+          ilike(schema.leads.name, `%${search}%`),
+          ilike(schema.leads.email, `%${search}%`),
+        )
+      );
+    }
 
-    const items = await db.query.leads.findMany({
-      where: and(...conditions),
-      orderBy: [desc(schema.leads.createdAt)],
-      limit,
-      offset: (page - 1) * limit,
-    });
+    const items = await db
+      .select()
+      .from(schema.leads)
+      .where(and(...conditions))
+      .orderBy(desc(schema.leads.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit);
 
-    const [{ total }] = await db.select({ total: sql<number>`count(*)::int` })
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)::int` })
       .from(schema.leads)
       .where(and(...conditions));
 
@@ -70,13 +72,13 @@ export async function PATCH(request: NextRequest) {
 
     const db = getDb();
     const allowedFields = ["score", "assignedToUserId", "currentStageId"];
-    const safeUpdates: Record<string, any> = {};
+    const safeUpdates: Record<string, any> = { updatedAt: new Date() };
     for (const key of allowedFields) {
       if (updates[key] !== undefined) safeUpdates[key] = updates[key];
     }
 
     await db.update(schema.leads)
-      .set({ ...safeUpdates, updatedAt: new Date() })
+      .set(safeUpdates)
       .where(
         and(
           inArray(schema.leads.id, leadIds),

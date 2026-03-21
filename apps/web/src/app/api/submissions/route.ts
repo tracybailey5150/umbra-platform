@@ -16,9 +16,11 @@ export async function POST(request: NextRequest) {
     const db = getDb();
 
     // Verify agent exists
-    const agent = await db.query.agents.findFirst({
-      where: eq(schema.agents.id, agentId),
-    });
+    const [agent] = await db
+      .select()
+      .from(schema.agents)
+      .where(eq(schema.agents.id, agentId))
+      .limit(1);
     if (!agent) return NextResponse.json(err("Agent not found"), { status: 404 });
 
     // Store raw submission
@@ -35,8 +37,8 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get("user-agent") ?? null,
     }).returning();
 
-    // AI processing (inline for MVP; move to background job for scale)
-    let aiResult;
+    // AI processing (inline for MVP)
+    let aiResult: any;
     try {
       const aiAgent = createQuoteAgent({
         provider: "anthropic",
@@ -51,12 +53,13 @@ export async function POST(request: NextRequest) {
     if (aiResult) {
       await db.update(schema.submissions)
         .set({
-          aiSummary: aiResult.summary,
+          aiSummary: aiResult.summary ?? null,
           aiStructuredData: aiResult,
-          aiMissingFields: aiResult.missingFields,
-          aiSuggestedNextSteps: aiResult.suggestedNextSteps,
+          aiMissingFields: aiResult.missingFields ?? null,
+          aiSuggestedNextSteps: aiResult.suggestedNextSteps ?? null,
           aiProcessedAt: new Date(),
           status: "reviewing",
+          updatedAt: new Date(),
         })
         .where(eq(schema.submissions.id, submission.id));
     }
@@ -109,18 +112,21 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getDb();
-    const conditions = [
+    const conditions: any[] = [
       eq(schema.submissions.organizationId, organizationId),
       isNull(schema.submissions.deletedAt),
-      ...(status ? [eq(schema.submissions.status, status as typeof schema.submissions.$inferSelect.status)] : []),
     ];
+    if (status) {
+      conditions.push(eq(schema.submissions.status, status as any));
+    }
 
-    const items = await db.query.submissions.findMany({
-      where: and(...conditions),
-      orderBy: [desc(schema.submissions.createdAt)],
-      limit,
-      offset: (page - 1) * limit,
-    });
+    const items = await db
+      .select()
+      .from(schema.submissions)
+      .where(and(...conditions))
+      .orderBy(desc(schema.submissions.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit);
 
     return NextResponse.json(ok({ items, total: items.length, page, limit }));
   } catch (error) {

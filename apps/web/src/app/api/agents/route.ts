@@ -13,13 +13,16 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getDb();
-    const items = await db.query.agents.findMany({
-      where: and(
-        eq(schema.agents.organizationId, organizationId),
-        isNull(schema.agents.deletedAt),
-      ),
-      orderBy: [asc(schema.agents.createdAt)],
-    });
+    const items = await db
+      .select()
+      .from(schema.agents)
+      .where(
+        and(
+          eq(schema.agents.organizationId, organizationId),
+          isNull(schema.agents.deletedAt),
+        )
+      )
+      .orderBy(asc(schema.agents.createdAt));
 
     return NextResponse.json(ok({ items }));
   } catch (error) {
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
       name,
       slug,
       type,
-      description,
+      description: description ?? null,
       isActive: true,
       aiConfig: {
         provider: "anthropic",
@@ -82,16 +85,16 @@ export async function POST(request: NextRequest) {
 }
 
 function buildDefaultSystemPrompt(type: string, industry?: string): string {
-  const industryCtx = industry ? ` for a ${industry} business` : "";
+  const ctx = industry ? ` for a ${industry} business` : "";
   switch (type) {
     case "quote":
-      return `You are an intelligent intake specialist${industryCtx}. Extract structured information from inbound quote requests. Score quote-readiness 0-100. Identify timeline, budget, scope, and contact completeness. Respond only in the JSON format specified.`;
+      return `You are an intelligent intake specialist${ctx}. Extract structured information from inbound quote requests. Score quote-readiness 0-100. Respond only in the JSON format specified.`;
     case "intake":
-      return `You are an intake assistant${industryCtx}. Process inbound service requests, extract all relevant details, and identify missing information. Respond only in the JSON format specified.`;
+      return `You are an intake assistant${ctx}. Process inbound service requests and extract all relevant details. Respond only in the JSON format specified.`;
     case "follow_up":
-      return `You are a professional follow-up specialist${industryCtx}. Write warm, personalized follow-up messages that reference the specific request. Keep messages concise and actionable.`;
+      return `You are a professional follow-up specialist${ctx}. Write warm, personalized follow-up messages. Keep messages concise and actionable.`;
     default:
-      return `You are an AI assistant${industryCtx}. Process incoming requests carefully and extract structured information. Respond only in the JSON format specified.`;
+      return `You are an AI assistant${ctx}. Process incoming requests carefully. Respond only in the JSON format specified.`;
   }
 }
 
