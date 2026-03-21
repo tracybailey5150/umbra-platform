@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, ArrowDownRight,
@@ -6,6 +7,7 @@ import {
   AlertCircle, ChevronRight, MoreHorizontal,
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import { getBrowserClient } from "@umbra/auth";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -131,6 +133,12 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  useEffect(() => {
+    const supabase = getBrowserClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) window.location.href = "/login";
+    });
+  }, []);
   return (
     <div className="animate-fade-in">
 
