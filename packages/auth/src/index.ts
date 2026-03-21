@@ -52,16 +52,17 @@ export function createServerClient(cookieStore: {
 
 // ─── BROWSER CLIENT ───────────────────────────────────────────────────────────
 
-let _browserClient: ReturnType<typeof import("@supabase/supabase-js").createClient> | null = null;
+let _browserClient: ReturnType<typeof import("@supabase/ssr").createBrowserClient> | null = null;
 
 /**
  * getBrowserClient — singleton Supabase client for client components.
- * Safe to call multiple times.
+ * Uses @supabase/ssr so sessions are stored in cookies (not localStorage),
+ * making them readable by the middleware for protected route checks.
  */
 export function getBrowserClient() {
   if (_browserClient) return _browserClient;
-  const { createClient } = require("@supabase/supabase-js");
-  _browserClient = createClient(
+  const { createBrowserClient } = require("@supabase/ssr");
+  _browserClient = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
