@@ -10,11 +10,13 @@
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "drizzle-orm": "^0.30.0",
+    "@types/pg": "^8.20.0",
+    "drizzle-orm": "^0.30.10",
+    "pg": "^8.20.0",
     "postgres": "^3.4.3"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.20.0",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.4.0"
   }
 }
