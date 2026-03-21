@@ -111,7 +111,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, [string, string]> = {
+  const map: Record<string, [string, string, string]> = {
     new:       ['rgba(99,102,241,0.12)',  '#818CF8', 'New'],
     reviewing: ['rgba(245,158,11,0.12)',  '#FCD34D', 'Reviewing'],
     quoted:    ['rgba(139,92,246,0.12)',  '#A78BFA', 'Quoted'],
