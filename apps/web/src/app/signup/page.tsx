@@ -71,6 +71,7 @@ export default function SignupPage() {
         throw new Error(body?.error ?? `Request failed: ${res.status}`);
       }
 
+      router.refresh();
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create organization.");
