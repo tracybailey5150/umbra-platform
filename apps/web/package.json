@@ -20,6 +20,7 @@
     "@umbra/shared": "*",
     "@umbra/ui": "*",
     "@umbra/workflows": "*",
+    "drizzle-orm": "^0.30.10",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.383.0",
