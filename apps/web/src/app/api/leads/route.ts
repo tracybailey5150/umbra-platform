@@ -1,61 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ok, err } from "@umbra/shared";
+import { getDb, schema } from "@umbra/db";
+import { eq, and, isNull, desc, asc, ilike, or, inArray, sql } from "drizzle-orm";
 
-/**
- * GET /api/leads
- * Returns paginated, filtered leads for an org.
- */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get("organizationId");
-    const status         = searchParams.get("status");
-    const agentId        = searchParams.get("agentId");
-    const assignedTo     = searchParams.get("assignedTo");
-    const search         = searchParams.get("q");
-    const page           = parseInt(searchParams.get("page")  ?? "1");
-    const limit          = parseInt(searchParams.get("limit") ?? "20");
-    const sortBy         = searchParams.get("sortBy")  ?? "createdAt";
-    const sortDir        = searchParams.get("sortDir") ?? "desc";
+    const status = searchParams.get("status");
+    const agentId = searchParams.get("agentId");
+    const assignedTo = searchParams.get("assignedTo");
+    const search = searchParams.get("q");
+    const page = parseInt(searchParams.get("page") ?? "1");
+    const limit = parseInt(searchParams.get("limit") ?? "20");
 
     if (!organizationId) {
       return NextResponse.json(err("organizationId required"), { status: 400 });
     }
 
-    // TODO: Auth — verify session user belongs to org
-    // const user = await requireAuth();
-    // await assertOrgMembership(user.id, organizationId);
+    const db = getDb();
 
-    // TODO: Real query
-    // const db = getDb();
-    // const conditions = [
-    //   eq(schema.leads.organizationId, organizationId),
-    //   isNull(schema.leads.deletedAt),
-    //   status    ? eq(schema.submissions.status, status as any) : undefined,
-    //   agentId   ? eq(schema.leads.agentId, agentId)           : undefined,
-    //   assignedTo ? eq(schema.leads.assignedToUserId, assignedTo) : undefined,
-    //   search    ? or(
-    //     ilike(schema.leads.name,  `%${search}%`),
-    //     ilike(schema.leads.email, `%${search}%`),
-    //   ) : undefined,
-    // ].filter(Boolean);
-    //
-    // const [leads, [{ count }]] = await Promise.all([
-    //   db.select().from(schema.leads)
-    //     .where(and(...conditions))
-    //     .orderBy(sortDir === "asc" ? asc(schema.leads[sortBy]) : desc(schema.leads[sortBy]))
-    //     .limit(limit).offset((page - 1) * limit),
-    //   db.select({ count: count() }).from(schema.leads).where(and(...conditions)),
-    // ]);
+    const conditions: any[] = [
+      eq(schema.leads.organizationId, organizationId),
+      isNull(schema.leads.deletedAt),
+    ];
+    if (agentId) conditions.push(eq(schema.leads.agentId, agentId));
+    if (assignedTo) conditions.push(eq(schema.leads.assignedToUserId, assignedTo));
+    if (search) conditions.push(
+      or(
+        ilike(schema.leads.name, `%${search}%`),
+        ilike(schema.leads.email, `%${search}%`),
+      )
+    );
+
+    const items = await db.query.leads.findMany({
+      where: and(...conditions),
+      orderBy: [desc(schema.leads.createdAt)],
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    const [{ total }] = await db.select({ total: sql<number>`count(*)::int` })
+      .from(schema.leads)
+      .where(and(...conditions));
 
     return NextResponse.json(ok({
-      items: [],
-      total: 0,
+      items,
+      total,
       page,
       limit,
-      totalPages: 0,
-      hasNextPage: false,
-      hasPrevPage: false,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
     }));
   } catch (error) {
     console.error("[GET /api/leads]", error);
@@ -63,10 +59,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * PATCH /api/leads
- * Bulk update leads (e.g. bulk status change, bulk assign)
- */
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
@@ -76,9 +68,21 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(err("leadIds, updates, and organizationId required"), { status: 400 });
     }
 
-    // TODO: Auth check
-    // TODO: Validate update fields (status, assignedToUserId, currentStageId)
-    // TODO: Apply DB update
+    const db = getDb();
+    const allowedFields = ["score", "assignedToUserId", "currentStageId"];
+    const safeUpdates: Record<string, any> = {};
+    for (const key of allowedFields) {
+      if (updates[key] !== undefined) safeUpdates[key] = updates[key];
+    }
+
+    await db.update(schema.leads)
+      .set({ ...safeUpdates, updatedAt: new Date() })
+      .where(
+        and(
+          inArray(schema.leads.id, leadIds),
+          eq(schema.leads.organizationId, organizationId),
+        )
+      );
 
     return NextResponse.json(ok({ updated: leadIds.length }));
   } catch (error) {
@@ -86,4 +90,5 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(err("Internal server error"), { status: 500 });
   }
 }
+
 export const dynamic = 'force-dynamic';
