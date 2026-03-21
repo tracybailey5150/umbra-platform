@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, ArrowDownRight,
@@ -133,12 +133,42 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const [authChecked, setAuthChecked] = useState(false);
+
   useEffect(() => {
     const supabase = getBrowserClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) window.location.href = "/login";
+
+    // Use getUser() — makes a network call to validate token, more reliable than getSession()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        window.location.href = "/login";
+      } else {
+        setAuthChecked(true);
+      }
     });
   }, []);
+
+  if (!authChecked) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#080C14",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <div style={{
+          width: "32px",
+          height: "32px",
+          border: "3px solid rgba(59,130,246,0.2)",
+          borderTopColor: "#3b82f6",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
   return (
     <div className="animate-fade-in">
 
