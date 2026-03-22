@@ -14,6 +14,7 @@ interface Agent {
   is_active: boolean;
   intake_config: Record<string, unknown> | null;
   created_at: string;
+  submissionCount?: number;
 }
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -74,6 +75,8 @@ export default function AgentsPage() {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
+
+    // Fetch agents
     const { data, error } = await supabase
       .from("agents")
       .select("*")
@@ -81,7 +84,35 @@ export default function AgentsPage() {
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
-    if (!error) setAgents(data ?? []);
+    if (error || !data) {
+      setLoading(false);
+      return;
+    }
+
+    // Fetch submission counts per agent
+    const { data: submissionCounts } = await supabase
+      .from("submissions")
+      .select("agent_id")
+      .eq("organization_id", oid)
+      .is("deleted_at", null);
+
+    // Count submissions per agent_id
+    const countMap: Record<string, number> = {};
+    if (submissionCounts) {
+      for (const row of submissionCounts) {
+        if (row.agent_id) {
+          countMap[row.agent_id] = (countMap[row.agent_id] || 0) + 1;
+        }
+      }
+    }
+
+    // Merge counts into agents
+    const agentsWithCounts = data.map((agent) => ({
+      ...agent,
+      submissionCount: countMap[agent.id] || 0,
+    }));
+
+    setAgents(agentsWithCounts);
     setLoading(false);
   }
 
@@ -247,15 +278,25 @@ export default function AgentsPage() {
                   </a>
                 </div>
 
-                {/* Status */}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "14px" }}>
-                  <div style={{
-                    width: "7px", height: "7px", borderRadius: "50%",
-                    background: agent.is_active ? "#10B981" : "#475569",
-                    boxShadow: agent.is_active ? "0 0 6px rgba(16,185,129,0.5)" : "none",
-                  }} />
-                  <span style={{ fontSize: "12px", color: agent.is_active ? "#34D399" : "#475569" }}>
-                    {agent.is_active ? "Active" : "Inactive"}
+                {/* Status + Submission count */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div style={{
+                      width: "7px", height: "7px", borderRadius: "50%",
+                      background: agent.is_active ? "#10B981" : "#475569",
+                      boxShadow: agent.is_active ? "0 0 6px rgba(16,185,129,0.5)" : "none",
+                    }} />
+                    <span style={{ fontSize: "12px", color: agent.is_active ? "#34D399" : "#475569" }}>
+                      {agent.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: "11px", color: "#64748B",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: "6px", padding: "2px 8px",
+                  }}>
+                    {agent.submissionCount ?? 0} submission{agent.submissionCount !== 1 ? "s" : ""}
                   </span>
                 </div>
 
