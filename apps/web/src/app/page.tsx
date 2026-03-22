@@ -1,347 +1,407 @@
 import Link from "next/link";
-import { ArrowRight, Zap, RefreshCw, Target, BarChart3, ChevronRight } from "lucide-react";
-import { PLANS, PUBLIC_PLANS } from "@umbra/billing";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
-      {/* ── Ambient background ────────────────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-brand-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[400px] bg-amber-500/8 rounded-full blur-[100px]" />
+    <div style={{
+      minHeight: "100vh",
+      background: "#070C18",
+      color: "#F1F5F9",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      overflowX: "hidden",
+    }}>
+      {/* Ambient blobs */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+        <div style={{
+          position: "absolute", top: 0, left: "25%",
+          width: "600px", height: "600px", borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }} />
+        <div style={{
+          position: "absolute", bottom: "33%", right: "25%",
+          width: "500px", height: "400px", borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }} />
       </div>
 
-      {/* ── Navigation ────────────────────────────────────────── */}
-      <nav className="relative z-20 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
-            <span className="font-display text-white text-sm font-normal">U</span>
+      {/* Nav */}
+      <nav style={{
+        position: "relative", zIndex: 20,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "20px 48px", maxWidth: "1200px", margin: "0 auto",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: "34px", height: "34px", borderRadius: "8px",
+            background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 0 20px rgba(99,102,241,0.4)",
+          }}>
+            <span style={{ color: "#fff", fontSize: "16px", fontWeight: 700 }}>U</span>
           </div>
-          <span className="font-display text-xl text-white tracking-tight">Umbra</span>
+          <span style={{ fontSize: "20px", fontWeight: 700, color: "#F1F5F9", letterSpacing: "-0.5px" }}>Umbra</span>
         </div>
-        <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
-          <Link href="#features" className="hover:text-white transition-colors">Features</Link>
-          <Link href="#agents" className="hover:text-white transition-colors">Agent Types</Link>
-          <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+          <a href="#features" style={{ fontSize: "14px", color: "#64748B", textDecoration: "none" }}>Features</a>
+          <a href="#how" style={{ fontSize: "14px", color: "#64748B", textDecoration: "none" }}>How it works</a>
+          <a href="#pricing" style={{ fontSize: "14px", color: "#64748B", textDecoration: "none" }}>Pricing</a>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors px-3 py-2">
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Link href="/login" style={{ fontSize: "14px", color: "#64748B", textDecoration: "none", padding: "8px 12px" }}>
             Sign in
           </Link>
-          <Link
-            href="/signup"
-            className="text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            Get started
+          <Link href="/signup" style={{
+            fontSize: "14px", fontWeight: 600, color: "#fff",
+            background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+            padding: "9px 20px", borderRadius: "8px", textDecoration: "none",
+            boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
+          }}>
+            Start free
           </Link>
         </div>
       </nav>
 
-      {/* ── Hero ──────────────────────────────────────────────── */}
-      <section className="relative z-10 text-center px-6 pt-24 pb-32 max-w-5xl mx-auto">
-        <div className="inline-flex items-center gap-2 text-xs font-medium text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1.5 rounded-full mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
-          AI Agent Platform — Phase 1 Now Available
+      {/* Hero */}
+      <section style={{
+        position: "relative", zIndex: 10,
+        textAlign: "center", padding: "80px 24px 120px",
+        maxWidth: "900px", margin: "0 auto",
+      }}>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: "8px",
+          fontSize: "12px", fontWeight: 600, color: "#A5B4FC",
+          background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)",
+          padding: "6px 14px", borderRadius: "99px", marginBottom: "32px",
+        }}>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#818CF8", display: "inline-block" }} />
+          AI Agent Platform — Now Live
         </div>
 
-        <h1 className="font-display text-6xl md:text-7xl lg:text-8xl text-white leading-[1.05] mb-8">
-          Agents that work
-          <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-300">
-            until the job's done.
+        <h1 style={{
+          fontSize: "72px", fontWeight: 800, color: "#F1F5F9",
+          lineHeight: 1.05, letterSpacing: "-0.04em", margin: "0 0 24px",
+        }}>
+          Stop losing leads.{" "}
+          <span style={{
+            background: "linear-gradient(135deg, #818CF8, #6366F1)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>
+            Your AI agent works 24/7.
           </span>
         </h1>
 
-        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-          One platform. Intelligent agents for quote capture, intake, lead qualification, 
-          follow-up automation, and persistent buyer matching. Built for serious businesses.
+        <p style={{
+          fontSize: "20px", color: "#64748B", lineHeight: 1.6,
+          maxWidth: "600px", margin: "0 auto 48px",
+        }}>
+          One platform. AI agents that capture, qualify, and follow up on every lead — automatically.
+          Built for serious service businesses.
         </p>
 
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-7 py-3.5 rounded-xl font-semibold text-base transition-colors shadow-lg shadow-brand-600/25"
-          >
-            Start building your agent
-            <ArrowRight size={18} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px" }}>
+          <Link href="/signup" style={{
+            display: "inline-flex", alignItems: "center", gap: "8px",
+            background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+            color: "#fff", padding: "14px 28px", borderRadius: "12px",
+            fontWeight: 700, fontSize: "16px", textDecoration: "none",
+            boxShadow: "0 8px 32px rgba(99,102,241,0.35)",
+          }}>
+            Start free →
           </Link>
-          <Link
-            href="#agents"
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-white px-6 py-3.5 rounded-xl font-medium text-base border border-slate-800 hover:border-slate-600 transition-all"
-          >
-            See agent types
-            <ChevronRight size={16} />
-          </Link>
+          <a href="#how" style={{
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            color: "#64748B", padding: "14px 24px", borderRadius: "12px",
+            fontSize: "15px", textDecoration: "none",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}>
+            See how it works
+          </a>
         </div>
       </section>
 
-      {/* ── Dashboard Preview ──────────────────────────────────── */}
-      <section className="relative z-10 px-6 mb-32 max-w-6xl mx-auto">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm overflow-hidden shadow-2xl shadow-black/40">
-          {/* Mock browser bar */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800 bg-slate-900/80">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-slate-700" />
-              <div className="w-3 h-3 rounded-full bg-slate-700" />
-              <div className="w-3 h-3 rounded-full bg-slate-700" />
+      {/* Dashboard preview */}
+      <section style={{ position: "relative", zIndex: 10, padding: "0 48px 96px", maxWidth: "1100px", margin: "0 auto" }}>
+        <div style={{
+          borderRadius: "20px", border: "1px solid rgba(255,255,255,0.07)",
+          background: "#0C1220", overflow: "hidden",
+          boxShadow: "0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.4)",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: "8px",
+            padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.02)",
+          }}>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {["#EF4444", "#F59E0B", "#10B981"].map((c) => (
+                <div key={c} style={{ width: "10px", height: "10px", borderRadius: "50%", background: c, opacity: 0.5 }} />
+              ))}
             </div>
-            <div className="flex-1 mx-4 bg-slate-800 rounded-md px-3 py-1 text-xs text-slate-500 text-center max-w-xs mx-auto">
+            <div style={{ flex: 1, maxWidth: "200px", margin: "0 auto", background: "rgba(255,255,255,0.04)", borderRadius: "6px", padding: "4px 12px", fontSize: "11px", color: "#334155", textAlign: "center" }}>
               app.umbra.ai/dashboard
             </div>
           </div>
-          {/* Mock dashboard content */}
-          <div className="p-6 bg-slate-50/5">
-            <div className="grid grid-cols-4 gap-4 mb-6">
+          <div style={{ padding: "24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "20px" }}>
               {[
-                { label: "New Submissions", value: "24", delta: "+8 today", color: "brand" },
-                { label: "Quote Ready", value: "11", delta: "45% of total", color: "amber" },
-                { label: "Avg Response Time", value: "2.4h", delta: "↓ 18%", color: "emerald" },
-                { label: "Est. Pipeline Value", value: "$84k", delta: "+$12k this week", color: "violet" },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-slate-900/80 rounded-xl p-4 border border-slate-800">
-                  <div className="text-xs text-slate-500 mb-1">{stat.label}</div>
-                  <div className="text-2xl font-semibold text-white mb-0.5">{stat.value}</div>
-                  <div className="text-xs text-slate-500">{stat.delta}</div>
+                { label: "New Submissions", value: "24", sub: "+8 today", color: "#6366F1" },
+                { label: "Quote Ready",     value: "11", sub: "45% of total", color: "#F59E0B" },
+                { label: "Avg Response",    value: "2.4h", sub: "↓ 18% faster", color: "#10B981" },
+                { label: "Pipeline Value",  value: "$84k", sub: "+$12k this week", color: "#8B5CF6" },
+              ].map((s) => (
+                <div key={s.label} style={{
+                  background: "rgba(255,255,255,0.02)", borderRadius: "12px",
+                  padding: "16px", border: "1px solid rgba(255,255,255,0.05)",
+                  borderTop: `2px solid ${s.color}30`,
+                }}>
+                  <div style={{ fontSize: "11px", color: "#475569", marginBottom: "4px" }}>{s.label}</div>
+                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#F1F5F9", marginBottom: "2px" }}>{s.value}</div>
+                  <div style={{ fontSize: "11px", color: "#334155" }}>{s.sub}</div>
                 </div>
               ))}
             </div>
-            <div className="bg-slate-900/80 rounded-xl border border-slate-800 overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-                <span className="text-sm font-medium text-white">Recent Submissions</span>
-                <span className="text-xs text-slate-500">View all →</span>
+            {[
+              { name: "Marcus T.", req: "Roof replacement — 2,400 sqft, asphalt shingles", score: 87, status: "Quote Ready", color: "#10B981" },
+              { name: "Sarah K.", req: "HVAC installation — 3-bed, full system upgrade", score: 72, status: "Reviewing", color: "#F59E0B" },
+              { name: "James R.", req: "Kitchen remodel — semi-custom cabinets, granite", score: 91, status: "New", color: "#6366F1" },
+            ].map((r, i) => (
+              <div key={r.name} style={{
+                display: "flex", alignItems: "center", gap: "12px",
+                padding: "12px 0",
+                borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none",
+              }}>
+                <div style={{
+                  width: "32px", height: "32px", borderRadius: "50%",
+                  background: "rgba(99,102,241,0.15)", color: "#818CF8",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 700, fontSize: "13px", flexShrink: 0,
+                }}>{r.name[0]}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#F1F5F9" }}>{r.name}</div>
+                  <div style={{ fontSize: "11px", color: "#475569" }}>{r.req}</div>
+                </div>
+                <div style={{ fontSize: "12px", color: "#94A3B8" }}>Score: {r.score}</div>
+                <div style={{
+                  fontSize: "11px", fontWeight: 700, color: r.color,
+                  background: `${r.color}15`, padding: "3px 10px", borderRadius: "99px",
+                }}>{r.status}</div>
               </div>
-              {[
-                { name: "Marcus T.", request: "Roof replacement, 2,400 sqft, asphalt shingles", score: 87, status: "Quote Ready", time: "12m ago" },
-                { name: "Sarah K.", request: "HVAC installation, 3-bedroom home, system upgrade", score: 72, status: "Reviewing", time: "1h ago" },
-                { name: "James R.", request: "Kitchen remodel quote, semi-custom cabinets, granite", score: 91, status: "New", time: "2h ago" },
-              ].map((item) => (
-                <div key={item.name} className="flex items-center gap-4 px-4 py-3 border-b border-slate-800/60 last:border-0">
-                  <div className="w-8 h-8 rounded-full bg-brand-600/20 text-brand-400 flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                    {item.name[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white">{item.name}</div>
-                    <div className="text-xs text-slate-500 truncate">{item.request}</div>
-                  </div>
-                  <div className="text-xs text-slate-500 hidden sm:block">{item.time}</div>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-slate-400">Score: {item.score}</span>
-                  </div>
-                  <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    item.status === "New" ? "bg-blue-500/10 text-blue-400" :
-                    item.status === "Quote Ready" ? "bg-emerald-500/10 text-emerald-400" :
-                    "bg-amber-500/10 text-amber-400"
-                  }`}>
-                    {item.status}
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Features ──────────────────────────────────────────── */}
-      <section id="features" className="relative z-10 px-6 py-24 max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-5xl text-white mb-4">Everything in one platform</h2>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
+      {/* Features */}
+      <section id="features" style={{ position: "relative", zIndex: 10, padding: "80px 48px", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: "60px" }}>
+          <h2 style={{ fontSize: "48px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.03em", margin: "0 0 16px" }}>
+            Everything in one platform
+          </h2>
+          <p style={{ fontSize: "18px", color: "#475569", maxWidth: "500px", margin: "0 auto" }}>
             One backend. Many focused agent products. Built to scale.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
           {[
             {
-              icon: <Zap size={22} />,
-              title: "Intelligent Intake",
-              desc: "AI captures messy requests and structures them into quote-ready summaries instantly.",
-              accent: "brand",
+              icon: "🤖",
+              title: "AI Qualification",
+              desc: "Every submission is scored 0–100 by AI, with urgency, estimated value, and missing info flagged automatically. Surface your best leads instantly.",
+              color: "#6366F1",
             },
             {
-              icon: <Target size={22} />,
-              title: "Lead Qualification",
-              desc: "Auto-score every submission and surface the most valuable opportunities first.",
-              accent: "amber",
+              icon: "⚡",
+              title: "Instant Follow-up",
+              desc: "AI-written, personalized follow-ups go out within minutes of a submission — not days. Never lose a lead to slow response time again.",
+              color: "#10B981",
             },
             {
-              icon: <RefreshCw size={22} />,
-              title: "Follow-Up Automation",
-              desc: "Personalized AI-written follow-ups sent at the right moment, automatically.",
-              accent: "emerald",
-            },
-            {
-              icon: <BarChart3 size={22} />,
-              title: "Pipeline Analytics",
-              desc: "Track conversion rates, response times, and revenue trends across every agent.",
-              accent: "violet",
+              icon: "📊",
+              title: "Full CRM",
+              desc: "Track every lead from intake to closed deal. See pipeline value, conversion rates, and agent performance across your entire business.",
+              color: "#F59E0B",
             },
           ].map((f) => (
-            <div key={f.title} className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition-colors">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
-                f.accent === "brand" ? "bg-brand-600/20 text-brand-400" :
-                f.accent === "amber" ? "bg-amber-500/20 text-amber-400" :
-                f.accent === "emerald" ? "bg-emerald-500/20 text-emerald-400" :
-                "bg-violet-500/20 text-violet-400"
-              }`}>
+            <div key={f.title} style={{
+              background: "#0C1220", borderRadius: "16px", padding: "28px",
+              border: "1px solid rgba(255,255,255,0.07)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            }}>
+              <div style={{
+                width: "48px", height: "48px", borderRadius: "12px",
+                background: `${f.color}15`, border: `1px solid ${f.color}25`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "22px", marginBottom: "20px",
+              }}>
                 {f.icon}
               </div>
-              <h3 className="text-white font-semibold text-lg mb-2">{f.title}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
+              <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 10px" }}>{f.title}</h3>
+              <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Agent Types ───────────────────────────────────────── */}
-      <section id="agents" className="relative z-10 px-6 py-24 max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <div className="text-xs font-semibold text-brand-400 tracking-widest uppercase mb-4">Phase 1</div>
-            <h2 className="font-display text-5xl text-white mb-6">
-              Quote &<br />Intake Agents
-            </h2>
-            <p className="text-slate-400 text-lg leading-relaxed mb-8">
-              Deploy an AI agent that captures service requests, extracts structured information,
-              and generates quote-ready summaries — automatically. Works for any service business.
-            </p>
-            <ul className="space-y-3 mb-10">
-              {[
-                "Branded intake form on your own URL",
-                "AI processes submissions in seconds",
-                "Missing info flagged automatically",
-                "Lead enters your CRM pipeline",
-                "Follow-up triggered on schedule",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-slate-300 text-sm">
-                  <div className="w-5 h-5 rounded-full bg-brand-600/20 text-brand-400 flex items-center justify-center flex-shrink-0">
-                    <ChevronRight size={12} />
-                  </div>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <Link href="/signup" className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-6 py-3 rounded-xl font-semibold transition-colors">
-              Launch your Quote Agent
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-          <div className="space-y-4">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
-              <div className="text-xs text-slate-500 mb-3 uppercase tracking-widest">Coming in Phase 2</div>
-              <h3 className="font-display text-2xl text-white mb-2">Persistent Buyer Agents</h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                A user tells the agent what they want once. The agent searches, scores, monitors,
-                and alerts — until the right match is found.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["Car Agent", "Property Agent", "Land Agent", "Equipment Agent", "Jewelry Agent"].map((t) => (
-                  <span key={t} className="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">
-                    {t}
-                  </span>
-                ))}
+      {/* How it works */}
+      <section id="how" style={{ position: "relative", zIndex: 10, padding: "80px 48px", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: "60px" }}>
+          <h2 style={{ fontSize: "48px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.03em", margin: "0 0 16px" }}>
+            Live in minutes
+          </h2>
+          <p style={{ fontSize: "18px", color: "#475569", maxWidth: "500px", margin: "0 auto" }}>
+            Three steps to your first AI-powered lead.
+          </p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+          {[
+            { step: "1", title: "Create your agent", desc: "Name your agent, describe your service, and set your intake questions in under 5 minutes." },
+            { step: "2", title: "Embed your form", desc: "Share a link or embed the intake form on your website. Your branded URL is ready instantly." },
+            { step: "3", title: "Get leads", desc: "Every submission is AI-processed, scored, and added to your pipeline. You get notified immediately." },
+          ].map((s) => (
+            <div key={s.step} style={{
+              background: "#0C1220", borderRadius: "16px", padding: "28px",
+              border: "1px solid rgba(255,255,255,0.07)",
+              position: "relative",
+            }}>
+              <div style={{
+                width: "40px", height: "40px", borderRadius: "10px",
+                background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "18px", fontWeight: 800, color: "#fff",
+                marginBottom: "20px",
+                boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
+              }}>
+                {s.step}
               </div>
+              <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 10px" }}>{s.title}</h3>
+              <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.7, margin: 0 }}>{s.desc}</p>
             </div>
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
-              <div className="text-xs text-slate-500 mb-3 uppercase tracking-widest">White-Label Ready</div>
-              <h3 className="font-display text-2xl text-white mb-2">Your Brand, Your Domain</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Every agent product can be white-labeled with your branding, custom domain,
-                and custom theme. Build a fleet of focused agent URLs.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* ── Pricing ───────────────────────────────────────────── */}
-      <section id="pricing" className="relative z-10 px-6 py-24 max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-5xl text-white mb-4">Simple, outcome-based pricing</h2>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
-            One-time setup includes full configuration and onboarding. Monthly fee keeps your agents running.
+      {/* Pricing */}
+      <section id="pricing" style={{ position: "relative", zIndex: 10, padding: "80px 48px", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: "60px" }}>
+          <h2 style={{ fontSize: "48px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.03em", margin: "0 0 16px" }}>
+            Simple pricing
+          </h2>
+          <p style={{ fontSize: "18px", color: "#475569", maxWidth: "500px", margin: "0 auto" }}>
+            Start free. Scale as you grow.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {PUBLIC_PLANS.map((plan, i) => (
-            <div
-              key={plan.slug}
-              className={`rounded-2xl border p-6 flex flex-col ${
-                i === 1
-                  ? "bg-brand-600 border-brand-500 shadow-xl shadow-brand-600/25"
-                  : "bg-slate-900/60 border-slate-800 hover:border-slate-700"
-              } transition-colors`}
-            >
-              <div className={`text-xs font-semibold uppercase tracking-widest mb-3 ${i === 1 ? "text-brand-200" : "text-slate-500"}`}>
-                {plan.name}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", maxWidth: "900px", margin: "0 auto" }}>
+          {[
+            {
+              name: "Basic",
+              price: "$9.99",
+              period: "/mo",
+              desc: "Perfect for solo operators and small businesses just getting started.",
+              features: ["1 AI agent", "Up to 100 submissions/mo", "AI lead scoring", "Basic analytics", "Email notifications"],
+              featured: false,
+            },
+            {
+              name: "Pro",
+              price: "$29",
+              period: "/mo",
+              desc: "For growing businesses that need multiple agents and advanced automation.",
+              features: ["Up to 5 AI agents", "Unlimited submissions", "AI follow-up automation", "Advanced analytics", "Priority support"],
+              featured: true,
+            },
+            {
+              name: "Team",
+              price: "$99",
+              period: "/mo",
+              desc: "For agencies and multi-location businesses managing multiple brands.",
+              features: ["Unlimited agents", "Multi-user team access", "White-label ready", "Custom domain", "Dedicated onboarding"],
+              featured: false,
+            },
+          ].map((p) => (
+            <div key={p.name} style={{
+              background: p.featured ? "linear-gradient(135deg, #4F46E5, #6366F1)" : "#0C1220",
+              borderRadius: "16px", padding: "28px",
+              border: p.featured ? "none" : "1px solid rgba(255,255,255,0.07)",
+              boxShadow: p.featured ? "0 20px 60px rgba(99,102,241,0.4)" : "0 4px 24px rgba(0,0,0,0.3)",
+              display: "flex", flexDirection: "column",
+            }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: p.featured ? "rgba(199,210,254,0.7)" : "#475569", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>
+                {p.name}
               </div>
-              <div className={`font-display text-3xl mb-1 ${i === 1 ? "text-white" : "text-white"}`}>
-                {plan.displayPrice}
+              <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "40px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.03em" }}>{p.price}</span>
+                <span style={{ fontSize: "14px", color: p.featured ? "rgba(199,210,254,0.7)" : "#475569" }}>{p.period}</span>
               </div>
-              <div className={`text-sm mb-6 ${i === 1 ? "text-brand-200" : "text-slate-500"}`}>
-                {plan.displaySetup}
-              </div>
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {plan.highlights.map((h) => (
-                  <li key={h} className={`flex items-start gap-2 text-sm ${i === 1 ? "text-brand-100" : "text-slate-400"}`}>
-                    <ChevronRight size={14} className={`mt-0.5 flex-shrink-0 ${i === 1 ? "text-brand-200" : "text-slate-600"}`} />
-                    {h}
-                  </li>
+              <p style={{ fontSize: "13px", color: p.featured ? "rgba(199,210,254,0.8)" : "#475569", lineHeight: 1.6, margin: "0 0 24px" }}>{p.desc}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "28px", flex: 1 }}>
+                {p.features.map((f) => (
+                  <div key={f} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: p.featured ? "rgba(199,210,254,0.9)" : "#94A3B8" }}>
+                    <span style={{ color: p.featured ? "#A5B4FC" : "#6366F1", fontSize: "16px", lineHeight: 1 }}>✓</span>
+                    {f}
+                  </div>
                 ))}
-              </ul>
-              <Link
-                href="/signup"
-                className={`text-center py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                  i === 1
-                    ? "bg-white text-brand-700 hover:bg-brand-50"
-                    : "bg-slate-800 text-white hover:bg-slate-700 border border-slate-700"
-                }`}
-              >
-                Get started
+              </div>
+              <Link href="/signup" style={{
+                display: "block", textAlign: "center", padding: "11px",
+                borderRadius: "8px", fontWeight: 700, fontSize: "14px",
+                textDecoration: "none",
+                background: p.featured ? "#fff" : "rgba(99,102,241,0.15)",
+                color: p.featured ? "#4F46E5" : "#818CF8",
+                border: p.featured ? "none" : "1px solid rgba(99,102,241,0.3)",
+              }}>
+                Start free
               </Link>
             </div>
           ))}
         </div>
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-4 bg-slate-900/60 border border-slate-800 rounded-2xl px-8 py-5">
-            <div>
-              <div className="text-white font-semibold">Enterprise Custom Agent Build</div>
-              <div className="text-slate-400 text-sm">Starting at $15,000 setup · Custom monthly</div>
-            </div>
-            <Link href="/contact" className="flex-shrink-0 text-sm font-semibold text-brand-400 hover:text-brand-300 transition-colors">
-              Contact us →
-            </Link>
-          </div>
+        <div style={{ textAlign: "center", marginTop: "24px" }}>
+          <Link href="/pricing" style={{ fontSize: "14px", color: "#475569", textDecoration: "none" }}>
+            View full pricing details →
+          </Link>
         </div>
       </section>
 
-      {/* ── Footer CTA ────────────────────────────────────────── */}
-      <section className="relative z-10 px-6 py-32 text-center max-w-3xl mx-auto">
-        <h2 className="font-display text-5xl md:text-6xl text-white mb-6">
-          Ready to deploy your first agent?
+      {/* Footer CTA */}
+      <section style={{ position: "relative", zIndex: 10, textAlign: "center", padding: "80px 24px 100px", maxWidth: "700px", margin: "0 auto" }}>
+        <h2 style={{ fontSize: "52px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.04em", margin: "0 0 20px", lineHeight: 1.1 }}>
+          Ready to deploy<br />your first agent?
         </h2>
-        <p className="text-slate-400 text-lg mb-10">
-          Start capturing, qualifying, and following up on leads automatically — in days, not months.
+        <p style={{ fontSize: "18px", color: "#475569", marginBottom: "40px" }}>
+          Start capturing, qualifying, and following up on leads automatically.
         </p>
-        <Link
-          href="/signup"
-          className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors shadow-lg shadow-brand-600/25"
-        >
-          Build your agent
-          <ArrowRight size={20} />
+        <Link href="/signup" style={{
+          display: "inline-flex", alignItems: "center", gap: "8px",
+          background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+          color: "#fff", padding: "16px 36px", borderRadius: "12px",
+          fontWeight: 700, fontSize: "17px", textDecoration: "none",
+          boxShadow: "0 8px 32px rgba(99,102,241,0.4)",
+        }}>
+          Start free →
         </Link>
       </section>
 
-      {/* ── Footer ────────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-slate-800 px-6 py-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-brand-500 flex items-center justify-center">
-              <span className="font-display text-white text-xs">U</span>
+      {/* Footer */}
+      <footer style={{
+        position: "relative", zIndex: 10,
+        borderTop: "1px solid rgba(255,255,255,0.07)",
+        padding: "32px 48px",
+      }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          maxWidth: "1200px", margin: "0 auto",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{
+              width: "24px", height: "24px", borderRadius: "6px",
+              background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ color: "#fff", fontSize: "12px", fontWeight: 700 }}>U</span>
             </div>
-            <span className="font-display text-white">Umbra</span>
+            <span style={{ color: "#F1F5F9", fontWeight: 600 }}>Umbra</span>
           </div>
-          <div className="text-sm text-slate-500">
+          <div style={{ fontSize: "13px", color: "#334155" }}>
             © {new Date().getFullYear()} Umbra Platform. All rights reserved.
           </div>
         </div>

@@ -54,14 +54,22 @@ export default function SignupPage() {
       return;
     }
 
-    // Step 2: create org, then redirect
+    // Step 2: create user record + org + membership, then redirect to onboarding
     setIsLoading(true);
     try {
-      const res = await fetch("/api/organizations", {
+      const supabase = getBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Session not found — please try signing in.");
+
+      const res = await fetch("/api/signup-complete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
-          name: form.orgName,
+          fullName: form.fullName,
+          orgName: form.orgName,
           industry: form.industry,
         }),
       });
@@ -72,7 +80,7 @@ export default function SignupPage() {
       }
 
       router.refresh();
-      router.push("/dashboard");
+      router.push("/onboarding");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create organization.");
       setIsLoading(false);
