@@ -28,11 +28,12 @@ export async function POST(request: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+    const stripe = getStripe();
+
     // Find or create Stripe customer
     let customerId: string | undefined;
     if (userEmail) {
-      const stripe = getStripe();
-    const existing = await stripe.customers.list({ email: userEmail, limit: 1 });
+      const existing = await stripe.customers.list({ email: userEmail, limit: 1 });
       if (existing.data.length > 0) {
         customerId = existing.data[0].id;
       } else {
