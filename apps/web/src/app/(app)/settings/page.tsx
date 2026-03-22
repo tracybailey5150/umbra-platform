@@ -150,10 +150,20 @@ export default function SettingsPage() {
     setOrgSaved(false);
     setOrgError(undefined);
     try {
-      const { error } = await supabase
-        .from("organizations")
-        .update({ name: orgName, slug: orgSlug })
-        .eq("id", orgIdRef.current);
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${supabaseUrl}/rest/v1/organizations?id=eq.${orgIdRef.current}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${session?.access_token ?? supabaseKey}`,
+          "Prefer": "return=minimal",
+        },
+        body: JSON.stringify({ name: orgName, slug: orgSlug }),
+      });
+      const error = res.ok ? null : new Error(`Save failed: ${res.status}`);
       if (error) throw error;
       setOrgSaved(true);
       setTimeout(() => setOrgSaved(false), 2500);

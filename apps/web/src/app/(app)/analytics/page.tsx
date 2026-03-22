@@ -110,13 +110,13 @@ export default function AnalyticsPage() {
         }
 
         // 1. Total submissions & avg score & by status
-        const { data: submissions } = await supabase
+        const { data: submissionsRaw } = await supabase
           .from("submissions")
           .select("id, status, ai_structured_data, created_at")
           .eq("organization_id", orgId)
           .order("created_at", { ascending: false });
 
-        const allSubs = submissions ?? [];
+        const allSubs = (submissionsRaw ?? []) as { id: string; status: string | null; ai_structured_data: { score?: number } | null; created_at: string }[];
         const total = allSubs.length;
 
         const scores = allSubs
@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
             .select("agent_id, status, ai_structured_data")
             .eq("organization_id", orgId);
 
-          const subsA = subsWithAgent ?? [];
+          const subsA = (subsWithAgent ?? []) as { agent_id: string | null; status: string | null; ai_structured_data: { score?: number } | null }[];
           const refined = agentList.map((a) => {
             const aSubs = subsA.filter((s) => s.agent_id === a.id);
             const aScores = aSubs

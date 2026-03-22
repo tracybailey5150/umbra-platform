@@ -169,21 +169,32 @@ export default function AgentConfigPage({ params }: { params: { id: string } }) 
     setLoading(true);
     setError(null);
     try {
-      const { data: agentData, error: agentErr } = await supabase
+      const { data: agentRaw, error: agentErr } = await supabase
         .from("agents")
-        .select("*")
+        .select("id, name, slug, type, description, is_active, created_at, intake_config")
         .eq("id", params.id)
         .single();
 
-      if (agentErr || !agentData) {
+      const typedAgent = agentRaw ? {
+        id: (agentRaw as any).id,
+        name: (agentRaw as any).name,
+        slug: (agentRaw as any).slug,
+        type: (agentRaw as any).type,
+        description: (agentRaw as any).description ?? null,
+        is_active: (agentRaw as any).is_active,
+        created_at: (agentRaw as any).created_at,
+        welcome_message: (agentRaw as any).intake_config?.welcomeMessage ?? null,
+      } as Agent : null;
+
+      if (agentErr || !typedAgent) {
         setError("Agent not found");
         return;
       }
 
-      setAgent(agentData);
-      setEditName(agentData.name ?? "");
-      setEditDescription(agentData.description ?? "");
-      setEditWelcome(agentData.welcome_message ?? "");
+      setAgent(typedAgent);
+      setEditName(typedAgent.name ?? "");
+      setEditDescription(typedAgent.description ?? "");
+      setEditWelcome(typedAgent.welcome_message ?? "");
 
       // Get submission count
       const { count } = await supabase
@@ -209,14 +220,21 @@ export default function AgentConfigPage({ params }: { params: { id: string } }) 
     setIsSaving(true);
     setSaveStatus("idle");
     try {
-      const { error: updateErr } = await supabase
-        .from("agents")
-        .update({
-          name: editName,
-          description: editDescription,
-          welcome_message: editWelcome,
-        })
-        .eq("id", agent.id);
+      // Use raw fetch to avoid Supabase type strictness on update
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${supabaseUrl}/rest/v1/agents?id=eq.${agent.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${session?.access_token ?? supabaseKey}`,
+          "Prefer": "return=minimal",
+        },
+        body: JSON.stringify({ name: editName, description: editDescription, intake_config: { welcomeMessage: editWelcome } }),
+      });
+      const updateErr = res.ok ? null : new Error(`Update failed: ${res.status}`);
 
       if (updateErr) throw updateErr;
       setAgent((prev) => prev ? { ...prev, name: editName, description: editDescription, welcome_message: editWelcome } : prev);
@@ -233,11 +251,20 @@ export default function AgentConfigPage({ params }: { params: { id: string } }) 
   async function handleToggleActive() {
     if (!agent) return;
     const newVal = !agent.is_active;
-    const { error: updateErr } = await supabase
-      .from("agents")
-      .update({ is_active: newVal })
-      .eq("id", agent.id);
-    if (!updateErr) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${supabaseUrl}/rest/v1/agents?id=eq.${agent.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${session?.access_token ?? supabaseKey}`,
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({ is_active: newVal }),
+    });
+    if (res.ok) {
       setAgent((prev) => prev ? { ...prev, is_active: newVal } : prev);
     }
   }
