@@ -205,7 +205,7 @@ export default function DashboardPage() {
       const { count: newCount } = await supabase
         .from("submissions")
         .select("id", { count: "exact", head: true })
-        .eq("organization_id", orgId)
+        .eq("organization_id", orgId!)
         .eq("status", "new")
         .is("deleted_at", null);
 
@@ -213,7 +213,7 @@ export default function DashboardPage() {
       const { count: quotedCount } = await supabase
         .from("submissions")
         .select("id", { count: "exact", head: true })
-        .eq("organization_id", orgId)
+        .eq("organization_id", orgId!)
         .eq("status", "quoted")
         .is("deleted_at", null);
 
@@ -221,7 +221,7 @@ export default function DashboardPage() {
       const { data: leadsData } = await supabase
         .from("leads")
         .select("estimated_value, score")
-        .eq("organization_id", orgId)
+        .eq("organization_id", orgId!)
         .is("deleted_at", null);
 
       const pipelineTotal = (leadsData ?? []).reduce((sum: number, row: any) => {
@@ -234,7 +234,7 @@ export default function DashboardPage() {
         .from("submissions")
         .select(`id, status, submitter_name, submitter_email, created_at, ai_structured_data,
           agents(id, name, slug)`)
-        .eq("organization_id", orgId)
+        .eq("organization_id", orgId!)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(5);
