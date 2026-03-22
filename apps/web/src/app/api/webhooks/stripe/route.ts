@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { err } from "@umbra/shared";
+import { createClient } from "@supabase/supabase-js";
 
 /**
  * POST /api/webhooks/stripe
@@ -77,26 +78,46 @@ export async function POST(request: NextRequest) {
 
 async function handleCheckoutCompleted(session: StripeCheckoutSession) {
   const { metadata } = session;
-  if (!metadata?.organizationId || !metadata?.planSlug) {
-    console.warn("[Stripe] checkout.session.completed missing metadata");
+  const userId = metadata?.userId;
+  const priceId = metadata?.priceId;
+
+  console.log(`[Stripe] Checkout completed for user: ${userId}, price: ${priceId}`);
+
+  // Map price IDs to plan tiers
+  const planTierMap: Record<string, string> = {
+    "price_1TDGbjQgTSmbZJKxZyKJe5Va": "basic",
+    "price_1TDGbkQgTSmbZJKx8kElMmUl": "pro",
+    "price_1TDGblQgTSmbZJKxNgWawFku": "team",
+  };
+  const planTier = priceId ? planTierMap[priceId] || "basic" : "basic";
+
+  // Upsert into subscriptions table
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("[Stripe] Supabase env vars not set");
     return;
   }
 
-  // TODO: Activate subscription
-  // const db = getDb();
-  // await db.update(schema.subscriptions)
-  //   .set({
-  //     status: "active",
-  //     stripeSubscriptionId: session.subscription,
-  //     setupFeePaid: true,
-  //     updatedAt: new Date(),
-  //   })
-  //   .where(eq(schema.subscriptions.organizationId, metadata.organizationId));
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // TODO: Send welcome email
-  // await sendWelcomeEmail({ organizationId: metadata.organizationId });
+  const { error } = await supabase.from("subscriptions").upsert(
+    {
+      user_id: userId || null,
+      stripe_customer_id: session.customer || null,
+      stripe_subscription_id: session.subscription || null,
+      plan_tier: planTier,
+      status: "active",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "stripe_subscription_id" }
+  );
 
-  console.log(`[Stripe] Checkout completed for org: ${metadata.organizationId}`);
+  if (error) {
+    console.error("[Stripe] Failed to upsert subscription:", error);
+  } else {
+    console.log(`[Stripe] Subscription upserted for user: ${userId}, plan: ${planTier}`);
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: StripeSubscription) {

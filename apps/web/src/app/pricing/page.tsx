@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { Check, Minus, ArrowRight } from "lucide-react";
 import { PLANS, PUBLIC_PLANS } from "@umbra/billing";
+import { CheckoutButton } from "./CheckoutButton";
+
+// Map plan slugs to Stripe test price IDs
+const PLAN_PRICE_IDS: Record<string, string> = {
+  quote_agent_starter: "price_1TDGbjQgTSmbZJKxZyKJe5Va",
+  quote_agent_pro: "price_1TDGbkQgTSmbZJKx8kElMmUl",
+  persistent_buyer_agent: "price_1TDGblQgTSmbZJKxNgWawFku",
+  white_label_install: "",
+};
 
 // ─── Feature comparison table rows ───────────────────────────────────────────
 
@@ -108,16 +117,28 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href="/signup"
-                  className={`text-center py-3 rounded-xl text-sm font-semibold transition-colors ${
-                    isFeatured
-                      ? "bg-white text-brand-700 hover:bg-brand-50"
-                      : "bg-slate-900 text-white hover:bg-slate-800"
-                  }`}
-                >
-                  Get started
-                </Link>
+                {PLAN_PRICE_IDS[plan.slug] ? (
+                  <CheckoutButton
+                    priceId={PLAN_PRICE_IDS[plan.slug]}
+                    label="Get Started"
+                    className={`w-full text-center py-3 rounded-xl text-sm font-semibold transition-colors bg-gradient-to-r cursor-pointer border-0 ${
+                      isFeatured
+                        ? "from-indigo-500 to-indigo-400 text-white hover:from-indigo-600 hover:to-indigo-500"
+                        : "from-slate-800 to-slate-900 text-white hover:from-slate-700 hover:to-slate-800"
+                    } disabled:opacity-60`}
+                  />
+                ) : (
+                  <Link
+                    href="/contact"
+                    className={`text-center py-3 rounded-xl text-sm font-semibold transition-colors block ${
+                      isFeatured
+                        ? "bg-white text-brand-700 hover:bg-brand-50"
+                        : "bg-slate-900 text-white hover:bg-slate-800"
+                    }`}
+                  >
+                    Contact Us
+                  </Link>
+                )}
               </div>
             );
           })}
@@ -200,16 +221,28 @@ export default function PricingPage() {
                 const isFeat = key === FEATURED;
                 return (
                   <div key={key} className={`p-4 text-center ${isFeat ? "bg-brand-50/50" : ""}`}>
-                    <Link
-                      href="/signup"
-                      className={`text-xs font-semibold py-2 px-3 rounded-lg inline-block transition-colors ${
-                        isFeat
-                          ? "bg-brand-600 text-white hover:bg-brand-700"
-                          : "bg-slate-900 text-white hover:bg-slate-800"
-                      }`}
-                    >
-                      Start →
-                    </Link>
+                    {PLAN_PRICE_IDS[key] ? (
+                      <CheckoutButton
+                        priceId={PLAN_PRICE_IDS[key]}
+                        label="Start →"
+                        className={`text-xs font-semibold py-2 px-3 rounded-lg inline-block transition-colors bg-gradient-to-r cursor-pointer border-0 ${
+                          isFeat
+                            ? "from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600"
+                            : "from-slate-800 to-slate-900 text-white hover:from-slate-700 hover:to-slate-800"
+                        } disabled:opacity-60`}
+                      />
+                    ) : (
+                      <Link
+                        href="/contact"
+                        className={`text-xs font-semibold py-2 px-3 rounded-lg inline-block transition-colors ${
+                          isFeat
+                            ? "bg-brand-600 text-white hover:bg-brand-700"
+                            : "bg-slate-900 text-white hover:bg-slate-800"
+                        }`}
+                      >
+                        Contact →
+                      </Link>
+                    )}
                   </div>
                 );
               })}
