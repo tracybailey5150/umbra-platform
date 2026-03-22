@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { Search, Filter, ArrowRight, Download, Plus, Copy, Check } from "lucide-react";
+import { getBrowserClient } from "@umbra/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,13 +103,25 @@ export default function LeadsPage() {
   const [firstAgentSlug, setFirstAgentSlug] = useState<string>("");
 
   const fetchLeads = useCallback(async () => {
+    const authSupabase = getBrowserClient();
+    const { data: { session } } = await authSupabase.auth.getSession();
+    let orgId: string | null = null;
+
+    if (session?.access_token) {
+      try {
+        const res = await fetch("/api/org", { headers: { Authorization: `Bearer ${session.access_token}` } });
+        const orgData = await res.json();
+        orgId = orgData.orgId ?? null;
+      } catch (_e) { /* ignore */ }
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
     // Fetch submissions with related agent + lead data
-    const { data, error } = await supabase
+    let query = supabase
       .from("submissions")
       .select(`
         id, status, submitter_name, submitter_email, submitter_phone,
@@ -118,7 +131,13 @@ export default function LeadsPage() {
       `)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(50);
+
+    if (orgId) {
+      query = query.eq("organization_id", orgId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Failed to fetch leads:", error);

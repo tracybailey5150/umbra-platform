@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Bot, Zap, MessageSquare, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bot, Zap, MessageSquare, CheckCircle2, Copy, Check, ExternalLink } from "lucide-react";
+import { getBrowserClient } from "@umbra/auth";
+import { createClient } from "@supabase/supabase-js";
 
 const AGENT_TYPES = [
   {
@@ -28,7 +30,29 @@ const AGENT_TYPES = [
   },
 ];
 
+const INDUSTRIES = [
+  "Home Services", "HVAC", "Roofing", "Remodeling", "Landscaping", "Real Estate", "Other",
+];
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80);
+}
+
 type Step = "type" | "details" | "launch";
+
+// ─── Input style helper ───────────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "10px 12px", borderRadius: "8px",
+  background: "#070C18", border: "1px solid rgba(255,255,255,0.1)",
+  color: "#F1F5F9", fontSize: "13px", outline: "none",
+  boxSizing: "border-box",
+};
 
 export default function NewAgentPage() {
   const [step, setStep] = useState<Step>("type");
@@ -36,32 +60,175 @@ export default function NewAgentPage() {
   const [agentName, setAgentName] = useState("");
   const [agentDesc, setAgentDesc] = useState("");
   const [industry, setIndustry] = useState("");
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [autoRespond, setAutoRespond] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [created, setCreated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function handleCreate() {
     setIsCreating(true);
-    await new Promise((r) => setTimeout(r, 1400));
-    setIsCreating(false);
-    setCreated(true);
+    setError(null);
+
+    try {
+      const authSupabase = getBrowserClient();
+      const { data: { user } } = await authSupabase.auth.getUser();
+      if (!user) { window.location.href = "/login"; return; }
+
+      const { data: { session } } = await authSupabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("No session token");
+
+      // Get org
+      const res = await fetch("/api/org", { headers: { Authorization: `Bearer ${token}` } });
+      const orgData = await res.json();
+      if (!orgData.orgId) throw new Error("No organization found");
+
+      const slug = slugify(agentName);
+
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      const { data: agent, error: insertError } = await supabase
+        .from("agents")
+        .insert({
+          organization_id: orgData.orgId,
+          name: agentName.trim(),
+          slug,
+          type: selectedType,
+          description: agentDesc.trim() || null,
+          is_active: true,
+          intake_config: {
+            welcomeMessage: welcomeMessage.trim() || null,
+            autoRespond,
+            industry: industry || null,
+          },
+        })
+        .select("id, slug")
+        .single();
+
+      if (insertError) {
+        // Slug conflict — append timestamp
+        if (insertError.code === "23505") {
+          const slugWithTs = `${slug}-${Date.now().toString().slice(-4)}`;
+          const { data: agent2, error: err2 } = await supabase
+            .from("agents")
+            .insert({
+              organization_id: orgData.orgId,
+              name: agentName.trim(),
+              slug: slugWithTs,
+              type: selectedType,
+              description: agentDesc.trim() || null,
+              is_active: true,
+              intake_config: {
+                welcomeMessage: welcomeMessage.trim() || null,
+                autoRespond,
+                industry: industry || null,
+              },
+            })
+            .select("id, slug")
+            .single();
+          if (err2) throw new Error(err2.message);
+          setCreatedSlug(agent2!.slug);
+          setCreatedId(agent2!.id);
+        } else {
+          throw new Error(insertError.message);
+        }
+      } else {
+        setCreatedSlug(agent!.slug);
+        setCreatedId(agent!.id);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create agent");
+    } finally {
+      setIsCreating(false);
+    }
   }
 
-  if (created) {
+  // Success screen
+  if (createdSlug) {
+    const intakeUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/submit/${createdSlug}`;
     return (
-      <div className="max-w-lg mx-auto pt-16 text-center animate-slide-up">
-        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
-          <CheckCircle2 size={32} className="text-emerald-500" />
+      <div style={{ maxWidth: "520px", margin: "0 auto", paddingTop: "48px", textAlign: "center" }}>
+        <div style={{
+          width: "56px", height: "56px", borderRadius: "50%",
+          background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 20px",
+        }}>
+          <CheckCircle2 size={28} color="#10B981" />
         </div>
-        <h1 className="font-display text-3xl text-slate-900 mb-2">Agent created!</h1>
-        <p className="text-slate-500 mb-8">
-          <strong>{agentName}</strong> is ready to configure and deploy.
+        <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#F1F5F9", margin: "0 0 8px", letterSpacing: "-0.02em" }}>
+          Agent created!
+        </h1>
+        <p style={{ fontSize: "14px", color: "#475569", marginBottom: "28px" }}>
+          <strong style={{ color: "#CBD5E1" }}>{agentName}</strong> is ready to receive leads.
         </p>
-        <div className="flex items-center justify-center gap-3">
-          <Link href="/agents/new-agent-id" className="btn-primary">
-            Configure agent →
+
+        {/* Intake URL card */}
+        <div style={{
+          background: "#0C1220", borderRadius: "12px", padding: "20px",
+          border: "1px solid rgba(255,255,255,0.07)", marginBottom: "20px",
+          textAlign: "left",
+        }}>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+            Your intake form URL
+          </div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: "8px",
+            background: "#070C18", borderRadius: "8px", padding: "10px 12px",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}>
+            <span style={{ fontSize: "12px", color: "#818CF8", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {intakeUrl}
+            </span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(intakeUrl).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2500);
+                });
+              }}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: copied ? "#34D399" : "#475569",
+                display: "flex", alignItems: "center", gap: "4px",
+                fontSize: "12px", fontWeight: 600,
+              }}
+            >
+              {copied ? <Check size={13} /> : <Copy size={13} />}
+              {copied ? "Copied!" : "Copy"}
+            </button>
+            <a href={intakeUrl} target="_blank" rel="noreferrer" style={{ color: "#475569", display: "flex" }}>
+              <ExternalLink size={13} />
+            </a>
+          </div>
+          <p style={{ fontSize: "11px", color: "#334155", marginTop: "10px", margin: "10px 0 0" }}>
+            Share this link with your customers to start collecting leads.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <Link href="/agents" style={{
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            padding: "10px 20px", borderRadius: "8px",
+            background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+            color: "#fff", fontSize: "13px", fontWeight: 600,
+            textDecoration: "none", boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
+          }}>
+            View agents →
           </Link>
-          <Link href="/agents" className="btn-secondary">
-            Back to agents
+          <Link href="/dashboard" style={{
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            padding: "10px 16px", borderRadius: "8px",
+            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "#94A3B8", fontSize: "13px", fontWeight: 600, textDecoration: "none",
+          }}>
+            Dashboard
           </Link>
         </div>
       </div>
@@ -69,36 +236,47 @@ export default function NewAgentPage() {
   }
 
   return (
-    <div className="max-w-2xl animate-fade-in">
+    <div style={{ maxWidth: "680px" }}>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Link href="/agents" className="btn-ghost p-2"><ArrowLeft size={16} /></Link>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "28px" }}>
+        <Link href="/agents" style={{
+          width: "32px", height: "32px", borderRadius: "8px",
+          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+          display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B",
+          textDecoration: "none",
+        }}>
+          <ArrowLeft size={15} />
+        </Link>
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">New Agent</h1>
-          <p className="text-sm text-slate-500">Configure a new AI agent for your workspace</p>
+          <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#F1F5F9", margin: 0, letterSpacing: "-0.02em" }}>New Agent</h1>
+          <p style={{ fontSize: "12px", color: "#475569", margin: "3px 0 0" }}>Configure a new AI agent for your workspace</p>
         </div>
       </div>
 
       {/* Progress */}
-      <div className="flex items-center gap-2 mb-8">
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "28px" }}>
         {(["type", "details", "launch"] as Step[]).map((s, i) => {
           const stepIndex = ["type", "details", "launch"].indexOf(step);
           const isActive = s === step;
           const isDone = i < stepIndex;
           return (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`flex items-center gap-1.5 text-xs font-medium ${
-                isDone ? "text-emerald-600" : isActive ? "text-brand-600" : "text-slate-400"
-              }`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                  isDone ? "bg-emerald-100" :
-                  isActive ? "bg-brand-600 text-white" : "bg-slate-100"
-                }`}>
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <div style={{
+                  width: "24px", height: "24px", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "11px", fontWeight: 700,
+                  background: isDone ? "rgba(16,185,129,0.12)" : isActive ? "#6366F1" : "rgba(255,255,255,0.05)",
+                  color: isDone ? "#10B981" : isActive ? "#fff" : "#334155",
+                  border: isDone ? "1px solid rgba(16,185,129,0.3)" : isActive ? "none" : "1px solid rgba(255,255,255,0.06)",
+                }}>
                   {isDone ? "✓" : i + 1}
                 </div>
-                <span className="capitalize">{s}</span>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: isActive ? "#F1F5F9" : isDone ? "#10B981" : "#334155", textTransform: "capitalize" }}>
+                  {s}
+                </span>
               </div>
-              {i < 2 && <div className="w-8 h-px bg-slate-200" />}
+              {i < 2 && <div style={{ width: "24px", height: "1px", background: "rgba(255,255,255,0.08)" }} />}
             </div>
           );
         })}
@@ -106,47 +284,61 @@ export default function NewAgentPage() {
 
       {/* Step: Choose type */}
       {step === "type" && (
-        <div className="animate-slide-up">
-          <h2 className="text-lg font-semibold text-slate-800 mb-1">Choose agent type</h2>
-          <p className="text-sm text-slate-500 mb-5">Select the type of agent that fits your workflow.</p>
-          <div className="space-y-3">
+        <div>
+          <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 4px", letterSpacing: "-0.01em" }}>Choose agent type</h2>
+          <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 20px" }}>Select the type of agent that fits your workflow.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {AGENT_TYPES.map(({ id, label, icon: Icon, desc, examples }) => (
               <button
                 key={id}
                 onClick={() => setSelectedType(id)}
-                className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 text-left transition-all ${
-                  selectedType === id
-                    ? "border-brand-500 bg-brand-50"
-                    : "border-slate-200 bg-white hover:border-slate-300"
-                }`}
+                style={{
+                  display: "flex", alignItems: "flex-start", gap: "14px",
+                  padding: "16px", borderRadius: "12px", textAlign: "left",
+                  background: selectedType === id ? "rgba(99,102,241,0.08)" : "#0C1220",
+                  border: `1px solid ${selectedType === id ? "rgba(99,102,241,0.4)" : "rgba(255,255,255,0.07)"}`,
+                  cursor: "pointer", width: "100%", transition: "all 0.15s",
+                }}
               >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                  selectedType === id ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-500"
-                }`}>
-                  <Icon size={20} />
+                <div style={{
+                  width: "38px", height: "38px", borderRadius: "10px", flexShrink: 0,
+                  background: selectedType === id ? "#6366F1" : "rgba(255,255,255,0.05)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Icon size={18} color={selectedType === id ? "#fff" : "#475569"} />
                 </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-slate-800 mb-1">{label}</div>
-                  <div className="text-sm text-slate-500 mb-2">{desc}</div>
-                  <div className="flex flex-wrap gap-1.5">
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#CBD5E1", marginBottom: "4px" }}>{label}</div>
+                  <div style={{ fontSize: "12px", color: "#475569", marginBottom: "8px", lineHeight: 1.5 }}>{desc}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {examples.map((e) => (
-                      <span key={e} className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{e}</span>
+                      <span key={e} style={{
+                        fontSize: "10px", padding: "2px 8px", borderRadius: "99px",
+                        background: "rgba(255,255,255,0.05)", color: "#64748B",
+                      }}>{e}</span>
                     ))}
                   </div>
                 </div>
                 {selectedType === id && (
-                  <CheckCircle2 size={18} className="text-brand-600 flex-shrink-0 mt-1" />
+                  <CheckCircle2 size={16} color="#818CF8" style={{ flexShrink: 0, marginTop: "2px" }} />
                 )}
               </button>
             ))}
           </div>
-          <div className="mt-6 flex justify-end">
+          <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
             <button
               disabled={!selectedType}
               onClick={() => setStep("details")}
-              className="btn-primary disabled:opacity-50"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "10px 20px", borderRadius: "8px",
+                background: selectedType ? "linear-gradient(135deg, #6366F1, #8B5CF6)" : "rgba(255,255,255,0.05)",
+                color: selectedType ? "#fff" : "#334155", fontSize: "13px", fontWeight: 600,
+                border: "none", cursor: selectedType ? "pointer" : "not-allowed",
+                opacity: selectedType ? 1 : 0.5,
+              }}
             >
-              Continue <ArrowRight size={15} />
+              Continue <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -154,53 +346,114 @@ export default function NewAgentPage() {
 
       {/* Step: Details */}
       {step === "details" && (
-        <div className="animate-slide-up space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800 mb-1">Agent details</h2>
-            <p className="text-sm text-slate-500 mb-5">Give your agent a name and business context.</p>
-          </div>
-          <div className="card p-5 space-y-4">
+        <div>
+          <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 4px", letterSpacing: "-0.01em" }}>Agent details</h2>
+          <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 20px" }}>Give your agent a name and business context.</p>
+
+          <div style={{ background: "#0C1220", borderRadius: "12px", padding: "20px", border: "1px solid rgba(255,255,255,0.07)", display: "flex", flexDirection: "column", gap: "18px" }}>
+            {/* Agent name */}
             <div>
-              <label className="label">Agent name <span className="text-red-500">*</span></label>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#94A3B8", display: "block", marginBottom: "6px" }}>
+                Agent name <span style={{ color: "#EF4444" }}>*</span>
+              </label>
               <input
                 type="text"
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
-                className="input"
                 placeholder="e.g. Roofing Quote Agent"
+                style={inputStyle}
               />
             </div>
+
+            {/* Industry */}
             <div>
-              <label className="label">Business context</label>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#94A3B8", display: "block", marginBottom: "6px" }}>Industry</label>
+              <select
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                style={{ ...inputStyle, cursor: "pointer" }}
+              >
+                <option value="">Select industry…</option>
+                {INDUSTRIES.map((ind) => (
+                  <option key={ind} value={ind}>{ind}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#94A3B8", display: "block", marginBottom: "6px" }}>Description</label>
               <textarea
                 rows={3}
                 value={agentDesc}
                 onChange={(e) => setAgentDesc(e.target.value)}
-                className="input resize-none"
-                placeholder="Briefly describe your business and what this agent will handle. The AI uses this to improve extraction accuracy."
+                placeholder="Briefly describe what this agent will handle. AI uses this for better extraction."
+                style={{ ...inputStyle, resize: "none", lineHeight: 1.6 }}
               />
             </div>
+
+            {/* Welcome message */}
             <div>
-              <label className="label">Industry</label>
-              <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="input">
-                <option value="">Select industry...</option>
-                <option>Home Services</option>
-                <option>Construction & Remodeling</option>
-                <option>Real Estate</option>
-                <option>Automotive</option>
-                <option>Equipment & Machinery</option>
-                <option>Other</option>
-              </select>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#94A3B8", display: "block", marginBottom: "6px" }}>
+                Welcome message <span style={{ fontSize: "11px", color: "#334155", fontWeight: 400 }}>optional — shown on intake form</span>
+              </label>
+              <textarea
+                rows={2}
+                value={welcomeMessage}
+                onChange={(e) => setWelcomeMessage(e.target.value)}
+                placeholder="e.g. Hi! Tell us about your project and we'll get back to you within 2 hours."
+                style={{ ...inputStyle, resize: "none", lineHeight: 1.6 }}
+              />
+            </div>
+
+            {/* Auto-respond toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#CBD5E1" }}>Auto-respond</div>
+                <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>AI automatically sends a draft response to new leads</div>
+              </div>
+              <div
+                onClick={() => setAutoRespond(!autoRespond)}
+                style={{ cursor: "pointer" }}
+              >
+                <div style={{
+                  width: "40px", height: "22px", borderRadius: "99px",
+                  background: autoRespond ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.08)",
+                  border: autoRespond ? "1px solid rgba(99,102,241,0.5)" : "1px solid rgba(255,255,255,0.1)",
+                  display: "flex", alignItems: "center", padding: "2px", transition: "all 0.2s",
+                }}>
+                  <div style={{
+                    width: "16px", height: "16px", borderRadius: "50%",
+                    background: autoRespond ? "#818CF8" : "#475569",
+                    transform: autoRespond ? "translateX(18px)" : "translateX(0)",
+                    transition: "all 0.2s",
+                  }} />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <button onClick={() => setStep("type")} className="btn-secondary">← Back</button>
+
+          <div style={{ marginTop: "20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <button onClick={() => setStep("type")} style={{
+              padding: "9px 16px", borderRadius: "8px",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+              color: "#64748B", fontSize: "13px", cursor: "pointer",
+            }}>
+              ← Back
+            </button>
             <button
               disabled={!agentName.trim()}
               onClick={() => setStep("launch")}
-              className="btn-primary disabled:opacity-50"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "10px 20px", borderRadius: "8px",
+                background: agentName.trim() ? "linear-gradient(135deg, #6366F1, #8B5CF6)" : "rgba(255,255,255,0.05)",
+                color: agentName.trim() ? "#fff" : "#334155", fontSize: "13px", fontWeight: 600,
+                border: "none", cursor: agentName.trim() ? "pointer" : "not-allowed",
+                opacity: agentName.trim() ? 1 : 0.5,
+              }}
             >
-              Continue <ArrowRight size={15} />
+              Continue <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -208,51 +461,83 @@ export default function NewAgentPage() {
 
       {/* Step: Review & Launch */}
       {step === "launch" && (
-        <div className="animate-slide-up">
-          <h2 className="text-lg font-semibold text-slate-800 mb-1">Review & launch</h2>
-          <p className="text-sm text-slate-500 mb-5">Confirm your agent settings before creating.</p>
+        <div>
+          <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 4px", letterSpacing: "-0.01em" }}>Review & launch</h2>
+          <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 20px" }}>Confirm your agent settings before creating.</p>
 
-          <div className="card p-5 space-y-4 mb-6">
+          <div style={{ background: "#0C1220", borderRadius: "12px", padding: "20px", border: "1px solid rgba(255,255,255,0.07)", marginBottom: "16px" }}>
             {[
-              { label: "Agent type", value: AGENT_TYPES.find((t) => t.id === selectedType)?.label ?? selectedType },
-              { label: "Name", value: agentName },
-              { label: "Industry", value: industry || "—" },
-              { label: "Context", value: agentDesc || "—" },
+              { label: "Agent type",      value: AGENT_TYPES.find((t) => t.id === selectedType)?.label ?? selectedType },
+              { label: "Name",            value: agentName },
+              { label: "Industry",        value: industry || "—" },
+              { label: "Description",     value: agentDesc || "—" },
+              { label: "Welcome message", value: welcomeMessage || "—" },
+              { label: "Auto-respond",    value: autoRespond ? "Enabled" : "Disabled" },
             ].map(({ label, value }) => (
-              <div key={label} className="flex items-start justify-between gap-4">
-                <span className="text-sm text-slate-500 flex-shrink-0 w-28">{label}</span>
-                <span className="text-sm font-medium text-slate-800 text-right">{value}</span>
+              <div key={label} style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <span style={{ fontSize: "12px", color: "#475569", flexShrink: 0, width: "130px" }}>{label}</span>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "#CBD5E1", textAlign: "right" }}>{value}</span>
               </div>
             ))}
           </div>
 
-          <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2 text-xs font-semibold text-brand-700 mb-2">
-              <Zap size={13} /> What happens next
+          {/* Slug preview */}
+          <div style={{
+            background: "rgba(99,102,241,0.06)", borderRadius: "10px", padding: "14px",
+            border: "1px solid rgba(99,102,241,0.15)", marginBottom: "20px",
+          }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#6366F1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>
+              Intake form URL preview
             </div>
-            <ul className="space-y-1.5 text-xs text-brand-600">
-              {[
-                "Agent is created with default intake form fields",
-                "AI system prompt is pre-configured for your industry",
-                "You can customize the form, AI config, and follow-up settings",
-                "Share the intake URL to start capturing leads",
-              ].map((s) => (
-                <li key={s} className="flex items-start gap-2">
-                  <ArrowRight size={11} className="mt-0.5 flex-shrink-0" /> {s}
-                </li>
-              ))}
-            </ul>
+            <div style={{ fontSize: "12px", color: "#818CF8" }}>
+              {typeof window !== "undefined" ? window.location.origin : ""}/submit/<strong>{slugify(agentName)}</strong>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <button onClick={() => setStep("details")} className="btn-secondary">← Back</button>
-            <button onClick={handleCreate} disabled={isCreating} className="btn-primary">
+          {error && (
+            <div style={{
+              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+              borderRadius: "8px", padding: "12px 14px", marginBottom: "16px",
+              fontSize: "13px", color: "#F87171",
+            }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <button onClick={() => setStep("details")} style={{
+              padding: "9px 16px", borderRadius: "8px",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+              color: "#64748B", fontSize: "13px", cursor: "pointer",
+            }}>
+              ← Back
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={isCreating}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                padding: "10px 24px", borderRadius: "8px",
+                background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+                color: "#fff", fontSize: "13px", fontWeight: 600,
+                border: "none", cursor: isCreating ? "not-allowed" : "pointer",
+                opacity: isCreating ? 0.7 : 1,
+                boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
+              }}
+            >
               {isCreating ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : <Bot size={15} />}
-              {isCreating ? "Creating..." : "Create agent"}
+                <>
+                  <div style={{ width: "14px", height: "14px", borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite" }} />
+                  Creating…
+                </>
+              ) : (
+                <>
+                  <Bot size={14} /> Create agent
+                </>
+              )}
             </button>
           </div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
     </div>

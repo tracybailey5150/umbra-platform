@@ -1,137 +1,427 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
-  ArrowLeft, Zap, Mail, Phone, Clock, User, Bot,
-  CheckCircle2, AlertCircle, MessageSquare, Send, Plus, Edit2,
+  ArrowLeft, Zap, Mail, Phone, Clock, Bot,
+  CheckCircle2, Send, Plus, ChevronDown,
 } from "lucide-react";
+import { getBrowserClient } from "@umbra/auth";
+import { createClient } from "@supabase/supabase-js";
 
-// ─── Mock lead data ───────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const LEAD = {
-  id: "l1",
-  name: "Marcus T.",
-  email: "marcus@example.com",
-  phone: "(555) 012-3456",
-  company: null,
-  status: "quoted",
-  score: 87,
-  estimatedValue: 18500,
-  stage: "Quoted",
-  assignedTo: "Sarah M.",
-  submittedAt: "March 14, 2026 at 10:32 AM",
-  agent: "Roofing Quote Agent",
-  rawRequest: "Hi, I need a quote for a full roof replacement on my house. It's about 2,400 square feet, I'd prefer asphalt shingles if possible. The current roof is about 18 years old and has been leaking in two spots after heavy rain. I'd like to get this done before summer if possible. Budget is flexible but looking for good value.",
-  aiSummary: "Homeowner requesting a full roof replacement on a 2,400 sq ft residential property. Current roof is 18 years old with active leak issues. Client prefers asphalt shingles and wants to complete work before summer. Budget is flexible, indicating value-focused rather than lowest-cost buyer.",
-  aiStructuredData: {
-    "Service Type": "Full Roof Replacement",
-    "Property Size": "2,400 sq ft",
-    "Material Preference": "Asphalt shingles",
-    "Current Roof Age": "18 years",
-    "Urgency": "Before summer",
-    "Issue": "Active leaks in 2 spots",
-    "Budget Sensitivity": "Flexible / value-focused",
-  },
-  aiMissingFields: ["Exact address / location", "Number of stories", "Current roofing material", "Preferred timeline within summer"],
-  aiNextSteps: [
-    "Schedule on-site measurement and inspection",
-    "Send material options (3-tab, architectural, premium)",
-    "Request photos of current leak areas",
-    "Provide preliminary estimate range",
-  ],
-  quoteReadyScore: 87,
-  timeline: [
-    { type: "submission", label: "Submission received", time: "March 14, 10:32 AM", icon: "inbox" },
-    { type: "ai", label: "AI processed submission — score 87/100", time: "March 14, 10:32 AM", icon: "zap" },
-    { type: "status", label: "Status changed to Reviewing", time: "March 14, 11:05 AM", icon: "user" },
-    { type: "note", label: "Note added by Sarah M.", time: "March 14, 11:20 AM", icon: "note", content: "Called and left voicemail. Will follow up tomorrow morning." },
-    { type: "status", label: "Quote sent — $18,500 estimate", time: "March 14, 2:14 PM", icon: "check" },
-  ],
-};
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    new: "badge-new", reviewing: "badge-reviewing",
-    quoted: "badge-quoted", accepted: "badge-accepted",
-    declined: "badge-declined", closed: "badge-closed",
-  };
-  const labels: Record<string, string> = {
-    new: "New", reviewing: "Reviewing", quoted: "Quoted",
-    accepted: "Accepted", declined: "Declined", closed: "Closed",
-  };
-  return <span className={map[status] ?? "badge"}>{labels[status] ?? status}</span>;
+interface Submission {
+  id: string;
+  status: string;
+  submitter_name: string | null;
+  submitter_email: string | null;
+  submitter_phone: string | null;
+  raw_data: Record<string, unknown> | null;
+  ai_summary: string | null;
+  ai_structured_data: {
+    summary?: string;
+    draftResponse?: string;
+    quoteReadyScore?: number;
+    extractedData?: Record<string, unknown>;
+    missingFields?: string[];
+    suggestedNextSteps?: string[];
+  } | null;
+  created_at: string;
+  agents: { id: string; name: string; slug: string } | null;
+  leads: { id: string; score: number | null; estimated_value: string | null } | null;
 }
 
-function ScoreRing({ score }: { score: number }) {
-  const color = score >= 80 ? "#10b981" : score >= 60 ? "#f59e0b" : "#ef4444";
-  const r = 20;
-  const circ = 2 * Math.PI * r;
+interface Note {
+  id: string;
+  content: string;
+  created_at: string;
+  is_ai_generated: boolean;
+}
+
+const STATUSES = ["new", "reviewing", "quoted", "accepted", "declined", "closed"];
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, [string, string, string]> = {
+    new:       ["rgba(99,102,241,0.12)",  "#818CF8", "New"],
+    reviewing: ["rgba(245,158,11,0.12)",  "#FCD34D", "Reviewing"],
+    quoted:    ["rgba(139,92,246,0.12)",  "#A78BFA", "Quoted"],
+    accepted:  ["rgba(16,185,129,0.12)",  "#34D399", "Accepted"],
+    declined:  ["rgba(239,68,68,0.12)",   "#F87171", "Declined"],
+    closed:    ["rgba(71,85,105,0.2)",    "#64748B", "Closed"],
+    archived:  ["rgba(71,85,105,0.2)",    "#64748B", "Archived"],
+  };
+  const [bg, color, label] = map[status] ?? ["rgba(71,85,105,0.2)", "#64748B", status];
+  return (
+    <span style={{
+      fontSize: "11px", fontWeight: 600, padding: "3px 8px", borderRadius: "99px",
+      background: bg, color, whiteSpace: "nowrap",
+    }}>{label}</span>
+  );
+}
+
+function BigScoreRing({ score }: { score: number }) {
+  const color = score >= 80 ? "#10B981" : score >= 60 ? "#F59E0B" : "#EF4444";
+  const r = 36, circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
   return (
-    <div className="relative w-14 h-14 flex items-center justify-center">
-      <svg width="56" height="56" className="-rotate-90">
-        <circle cx="28" cy="28" r={r} fill="none" stroke="#e2e8f0" strokeWidth="4" />
-        <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="4"
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
-      </svg>
-      <span className="absolute text-sm font-semibold text-slate-800">{score}</span>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+      <div style={{ position: "relative", width: "88px", height: "88px" }}>
+        <svg width="88" height="88" style={{ transform: "rotate(-90deg)" }}>
+          <circle cx="44" cy="44" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="6" />
+          <circle cx="44" cy="44" r={r} fill="none" stroke={color} strokeWidth="6"
+            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
+        </svg>
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{ fontSize: "22px", fontWeight: 800, color, lineHeight: 1 }}>{score}</span>
+          <span style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>score</span>
+        </div>
+      </div>
+      <span style={{ fontSize: "11px", fontWeight: 600, color }}>
+        {score >= 80 ? "High quality lead" : score >= 60 ? "Good lead" : "Needs more info"}
+      </span>
     </div>
   );
 }
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function LeadDetailPage({ params }: { params: { id: string } }) {
+export default function LeadDetailPage() {
+  const params = useParams<{ id: string }>();
+  const submissionId = params.id;
+
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const [draftResponse, setDraftResponse] = useState("");
+  const [sendingResponse, setSendingResponse] = useState(false);
+  const [responseSent, setResponseSent] = useState(false);
+
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+
+  const [status, setStatus] = useState("new");
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  useEffect(() => {
+    const authSupabase = getBrowserClient();
+    authSupabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { window.location.href = "/login"; return; }
+      setUserId(user.id);
+
+      const { data: { session } } = await authSupabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const res = await fetch("/api/org", { headers: { Authorization: `Bearer ${session.access_token}` } });
+      const orgData = await res.json();
+      if (orgData.orgId) {
+        setOrgId(orgData.orgId);
+        fetchSubmission(orgData.orgId);
+      }
+    });
+  }, [submissionId]);
+
+  async function fetchSubmission(oid: string) {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data, error } = await supabase
+      .from("submissions")
+      .select(`
+        id, status, submitter_name, submitter_email, submitter_phone,
+        raw_data, ai_summary, ai_structured_data, created_at,
+        agents(id, name, slug),
+        leads(id, score, estimated_value)
+      `)
+      .eq("id", submissionId)
+      .eq("organization_id", oid)
+      .maybeSingle();
+
+    if (!error && data) {
+      const sub = data as any;
+      setSubmission({
+        ...sub,
+        agents: Array.isArray(sub.agents) ? sub.agents[0] : sub.agents,
+        leads: Array.isArray(sub.leads) ? sub.leads[0] : sub.leads,
+      });
+      setStatus(sub.status ?? "new");
+      setDraftResponse(sub.ai_structured_data?.draftResponse ?? "");
+
+      // Fetch notes
+      if (sub.leads?.[0]?.id || sub.leads?.id) {
+        const leadId = Array.isArray(sub.leads) ? sub.leads[0]?.id : sub.leads?.id;
+        const { data: notesData } = await supabase
+          .from("notes")
+          .select("id, content, created_at, is_ai_generated")
+          .eq("submission_id", submissionId)
+          .order("created_at", { ascending: false });
+        setNotes(notesData ?? []);
+      } else {
+        // Try by submission_id
+        const { data: notesData } = await supabase
+          .from("notes")
+          .select("id, content, created_at, is_ai_generated")
+          .eq("submission_id", submissionId)
+          .order("created_at", { ascending: false });
+        setNotes(notesData ?? []);
+      }
+    }
+    setLoading(false);
+  }
+
+  async function handleSendResponse() {
+    if (!submission) return;
+    setSendingResponse(true);
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    await supabase
+      .from("submissions")
+      .update({ status: "quoted", updated_at: new Date().toISOString() })
+      .eq("id", submissionId);
+
+    setStatus("quoted");
+    setSubmission(prev => prev ? { ...prev, status: "quoted" } : null);
+    setSendingResponse(false);
+    setResponseSent(true);
+    setTimeout(() => setResponseSent(false), 3000);
+  }
+
+  async function handleStatusChange(newStatus: string) {
+    setStatusDropdownOpen(false);
+    setUpdatingStatus(true);
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { error } = await supabase
+      .from("submissions")
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq("id", submissionId);
+
+    if (!error) {
+      setStatus(newStatus);
+      setSubmission(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+    setUpdatingStatus(false);
+  }
+
+  async function handleSaveNote() {
+    if (!noteText.trim() || !userId || !orgId) return;
+    setSavingNote(true);
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // We need author_user_id — need to find the users table id from supabase_auth_id
+    // The notes table references users.id (not auth.uid directly)
+    // For simplicity, query the users table
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("id")
+      .eq("supabase_auth_id", userId)
+      .maybeSingle();
+
+    if (!userRow) {
+      // Try direct insert with userId as fallback
+      setSavingNote(false);
+      return;
+    }
+
+    const { data: newNote, error } = await supabase
+      .from("notes")
+      .insert({
+        organization_id: orgId,
+        submission_id: submissionId,
+        author_user_id: userRow.id,
+        content: noteText.trim(),
+        is_ai_generated: false,
+      })
+      .select("id, content, created_at, is_ai_generated")
+      .single();
+
+    if (!error && newNote) {
+      setNotes(prev => [newNote, ...prev]);
+      setNoteText("");
+    }
+    setSavingNote(false);
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "400px" }}>
+        <div style={{
+          width: "28px", height: "28px",
+          border: "3px solid rgba(59,130,246,0.15)", borderTopColor: "#3b82f6",
+          borderRadius: "50%", animation: "spin 0.8s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!submission) {
+    return (
+      <div style={{ padding: "60px 24px", textAlign: "center" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 12px" }}>Lead not found</h2>
+        <Link href="/leads" style={{ color: "#6366F1", fontSize: "14px", textDecoration: "none", fontWeight: 600 }}>← Back to leads</Link>
+      </div>
+    );
+  }
+
+  const name = submission.submitter_name ?? "Unknown";
+  const email = submission.submitter_email ?? "—";
+  const phone = submission.submitter_phone ?? "—";
+  const rawDesc = typeof submission.raw_data === "object" && submission.raw_data !== null
+    ? (submission.raw_data as any).description ?? null
+    : null;
+  const score = submission.leads?.score ?? submission.ai_structured_data?.quoteReadyScore ?? 0;
+  const aiSummary = submission.ai_summary ?? submission.ai_structured_data?.summary ?? null;
+  const extractedData = submission.ai_structured_data?.extractedData ?? {};
+  const missingFields = submission.ai_structured_data?.missingFields ?? [];
+  const suggestedSteps = submission.ai_structured_data?.suggestedNextSteps ?? [];
+
   return (
-    <div className="animate-fade-in">
+    <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
       {/* Back nav */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/leads" className="btn-ghost p-2">
-          <ArrowLeft size={16} />
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
+        <Link href="/leads" style={{
+          width: "32px", height: "32px", borderRadius: "8px",
+          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "#64748B", textDecoration: "none",
+        }}>
+          <ArrowLeft size={15} />
         </Link>
-        <div className="text-sm text-slate-500">
-          <Link href="/leads" className="hover:text-brand-600">Leads</Link>
-          <span className="mx-1.5">/</span>
-          <span className="text-slate-700">{LEAD.name}</span>
+        <div style={{ fontSize: "13px", color: "#475569" }}>
+          <Link href="/leads" style={{ color: "#475569", textDecoration: "none" }}>Leads</Link>
+          <span style={{ margin: "0 6px" }}>·</span>
+          <span style={{ color: "#CBD5E1" }}>{name}</span>
         </div>
       </div>
 
       {/* Lead header card */}
-      <div className="card p-6 mb-6">
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-lg font-bold">
-              {LEAD.name.charAt(0)}
+      <div style={{
+        background: "#0C1220", borderRadius: "14px", padding: "22px",
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+        marginBottom: "20px",
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{
+              width: "44px", height: "44px", borderRadius: "50%",
+              background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "16px", fontWeight: 800, color: "#818CF8",
+            }}>
+              {name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-xl font-semibold text-slate-900">{LEAD.name}</h1>
-                <StatusBadge status={LEAD.status} />
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <h1 style={{ fontSize: "18px", fontWeight: 800, color: "#F1F5F9", margin: 0, letterSpacing: "-0.01em" }}>{name}</h1>
+                <StatusBadge status={status} />
               </div>
-              <div className="flex items-center gap-4 text-sm text-slate-500">
-                <span className="flex items-center gap-1.5"><Mail size={13} />{LEAD.email}</span>
-                <span className="flex items-center gap-1.5"><Phone size={13} />{LEAD.phone}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "6px", flexWrap: "wrap" }}>
+                {email !== "—" && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#475569" }}>
+                    <Mail size={12} /> {email}
+                  </span>
+                )}
+                {phone !== "—" && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#475569" }}>
+                    <Phone size={12} /> {phone}
+                  </span>
+                )}
+                <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "#475569" }}>
+                  <Clock size={12} /> {timeAgo(submission.created_at)}
+                </span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="btn-secondary"><Mail size={15} /> Send email</button>
-            <button className="btn-primary"><Edit2 size={15} /> Update status</button>
+
+          {/* Status change */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+              disabled={updatingStatus}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "8px 14px", borderRadius: "8px",
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                color: "#94A3B8", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              Change status <ChevronDown size={13} />
+            </button>
+            {statusDropdownOpen && (
+              <div style={{
+                position: "absolute", right: 0, top: "100%", marginTop: "4px",
+                background: "#0C1220", borderRadius: "10px", padding: "6px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                zIndex: 50, minWidth: "140px",
+              }}>
+                {STATUSES.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handleStatusChange(s)}
+                    style={{
+                      display: "block", width: "100%", padding: "8px 10px", borderRadius: "6px",
+                      background: s === status ? "rgba(99,102,241,0.1)" : "none",
+                      border: "none", cursor: "pointer", textAlign: "left",
+                      fontSize: "12px", fontWeight: 600, color: s === status ? "#818CF8" : "#64748B",
+                    }}
+                  >
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Meta row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100">
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gap: "14px", marginTop: "20px", paddingTop: "18px",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}>
           {[
-            { label: "Agent", value: LEAD.agent, icon: Bot },
-            { label: "Submitted", value: LEAD.submittedAt, icon: Clock },
-            { label: "Assigned to", value: LEAD.assignedTo ?? "Unassigned", icon: User },
-            { label: "Est. Value", value: `$${LEAD.estimatedValue?.toLocaleString() ?? "—"}`, icon: null },
+            { label: "Agent",      value: submission.agents?.name ?? "Unknown", icon: Bot },
+            { label: "Submitted",  value: new Date(submission.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }), icon: Clock },
+            { label: "Est. Value", value: submission.leads?.estimated_value ? `$${parseFloat(submission.leads.estimated_value).toLocaleString()}` : "—", icon: null },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label}>
-              <div className="text-xs text-slate-400 mb-0.5">{label}</div>
-              <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                {Icon && <Icon size={13} className="text-slate-400" />}
+              <div style={{ fontSize: "10px", color: "#334155", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>{label}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 600, color: "#CBD5E1" }}>
+                {Icon && <Icon size={12} color="#475569" />}
                 {value}
               </div>
             </div>
@@ -139,191 +429,301 @@ export default function LeadDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left: AI analysis + raw request */}
-        <div className="lg:col-span-2 space-y-5">
+      {/* Main grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "20px" }}>
+        {/* Left col */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
           {/* AI Summary */}
-          <div className="card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center">
-                <Zap size={14} className="text-brand-600" />
+          <div style={{
+            background: "#0C1220", borderRadius: "14px", padding: "20px",
+            border: "1px solid rgba(255,255,255,0.07)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+              <div style={{
+                width: "28px", height: "28px", borderRadius: "8px",
+                background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Zap size={13} color="#818CF8" />
               </div>
-              <h2 className="text-sm font-semibold text-slate-800">AI Summary</h2>
-              <span className="ml-auto text-xs text-slate-400">Processed instantly</span>
+              <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: 0 }}>AI Summary</h2>
+              <span style={{ fontSize: "11px", color: "#334155", marginLeft: "auto" }}>Processed instantly</span>
             </div>
-            <p className="text-sm text-slate-700 leading-relaxed mb-5">{LEAD.aiSummary}</p>
+
+            {aiSummary ? (
+              <p style={{ fontSize: "13px", color: "#94A3B8", lineHeight: 1.7, margin: "0 0 16px" }}>{aiSummary}</p>
+            ) : (
+              <p style={{ fontSize: "12px", color: "#334155", fontStyle: "italic", margin: "0 0 16px" }}>No AI summary available yet.</p>
+            )}
 
             {/* Extracted fields */}
-            <div className="bg-slate-50 rounded-lg p-4 mb-4">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                Extracted Information
-              </div>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {Object.entries(LEAD.aiStructuredData).map(([key, value]) => (
-                  <div key={key} className="flex items-start gap-2">
-                    <CheckCircle2 size={13} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <span className="text-xs text-slate-500">{key}: </span>
-                      <span className="text-xs font-medium text-slate-700">{value}</span>
+            {Object.keys(extractedData).length > 0 && (
+              <div style={{
+                background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "14px",
+                marginBottom: "14px", border: "1px solid rgba(255,255,255,0.05)",
+              }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+                  Extracted Information
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  {Object.entries(extractedData).map(([key, value]) => (
+                    <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                      <CheckCircle2 size={11} color="#10B981" style={{ marginTop: "2px", flexShrink: 0 }} />
+                      <div>
+                        <span style={{ fontSize: "11px", color: "#334155" }}>{key}: </span>
+                        <span style={{ fontSize: "11px", fontWeight: 600, color: "#94A3B8" }}>{String(value)}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Missing fields */}
-            {LEAD.aiMissingFields.length > 0 && (
-              <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-4">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-2">
-                  <AlertCircle size={13} />
-                  Missing Information ({LEAD.aiMissingFields.length})
+            {missingFields.length > 0 && (
+              <div style={{
+                background: "rgba(245,158,11,0.06)", borderRadius: "10px", padding: "12px",
+                marginBottom: "14px", border: "1px solid rgba(245,158,11,0.15)",
+              }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#FCD34D", marginBottom: "8px" }}>
+                  Missing info ({missingFields.length})
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {LEAD.aiMissingFields.map((f) => (
-                    <span key={f} className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{f}</span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {missingFields.map((f) => (
+                    <span key={f} style={{
+                      fontSize: "10px", padding: "2px 8px", borderRadius: "99px",
+                      background: "rgba(245,158,11,0.1)", color: "#FCD34D",
+                    }}>{f}</span>
                   ))}
                 </div>
               </div>
             )}
 
             {/* Suggested next steps */}
-            <div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                Suggested Next Steps
+            {suggestedSteps.length > 0 && (
+              <div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
+                  Suggested Next Steps
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {suggestedSteps.map((step, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "12px", color: "#64748B" }}>
+                      <span style={{ fontSize: "10px", color: "#334155", fontWeight: 700, marginTop: "1px", minWidth: "16px" }}>{i + 1}.</span>
+                      {step}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <ul className="space-y-1.5">
-                {LEAD.aiNextSteps.map((step, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                    <span className="text-xs text-slate-400 mt-0.5 font-mono w-4 flex-shrink-0">{i + 1}.</span>
-                    {step}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            )}
           </div>
 
-          {/* Raw submission */}
-          <div className="card p-5">
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Original Submission</h2>
-            <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 rounded-lg p-4 italic">
-              "{LEAD.rawRequest}"
-            </p>
+          {/* Original submission */}
+          {rawDesc && (
+            <div style={{
+              background: "#0C1220", borderRadius: "14px", padding: "20px",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}>
+              <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 12px" }}>Original Submission</h2>
+              <p style={{
+                fontSize: "13px", color: "#64748B", lineHeight: 1.7,
+                background: "rgba(255,255,255,0.02)", borderRadius: "8px", padding: "14px",
+                border: "1px solid rgba(255,255,255,0.04)", fontStyle: "italic", margin: 0,
+              }}>
+                "{rawDesc}"
+              </p>
+            </div>
+          )}
+
+          {/* AI Draft Response */}
+          <div style={{
+            background: "#0C1220", borderRadius: "14px", padding: "20px",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}>
+            <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 12px" }}>
+              Draft Response
+              {draftResponse && (
+                <span style={{ fontSize: "10px", fontWeight: 600, marginLeft: "8px", color: "#6366F1", background: "rgba(99,102,241,0.1)", padding: "2px 6px", borderRadius: "4px" }}>AI generated</span>
+              )}
+            </h2>
+            <textarea
+              value={draftResponse}
+              onChange={(e) => setDraftResponse(e.target.value)}
+              placeholder="No AI draft available. Write a response manually…"
+              rows={5}
+              style={{
+                width: "100%", padding: "12px", borderRadius: "8px",
+                background: "#070C18", border: "1px solid rgba(255,255,255,0.08)",
+                color: "#F1F5F9", fontSize: "13px", lineHeight: 1.7,
+                resize: "vertical", outline: "none", boxSizing: "border-box",
+              }}
+            />
+            <div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <button
+                onClick={handleSendResponse}
+                disabled={sendingResponse || responseSent}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  padding: "9px 18px", borderRadius: "8px",
+                  background: responseSent ? "rgba(16,185,129,0.1)" : "linear-gradient(135deg, #6366F1, #8B5CF6)",
+                  border: responseSent ? "1px solid rgba(16,185,129,0.3)" : "none",
+                  color: responseSent ? "#34D399" : "#fff",
+                  fontSize: "13px", fontWeight: 600,
+                  cursor: sendingResponse || responseSent ? "not-allowed" : "pointer",
+                  boxShadow: responseSent ? "none" : "0 4px 12px rgba(99,102,241,0.25)",
+                }}
+              >
+                {responseSent ? (
+                  <><CheckCircle2 size={13} /> Marked as Quoted</>
+                ) : sendingResponse ? (
+                  <><div style={{ width: "12px", height: "12px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Sending…</>
+                ) : (
+                  <><Send size={13} /> Send Response</>
+                )}
+              </button>
+              <span style={{ fontSize: "11px", color: "#334155" }}>Marks status as "quoted"</span>
+            </div>
           </div>
 
           {/* Notes */}
-          <div className="card overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-semibold text-slate-800">Notes</h2>
-              <button className="btn-ghost py-1.5 text-xs">
-                <Plus size={13} /> Add note
-              </button>
+          <div style={{
+            background: "#0C1220", borderRadius: "14px",
+            border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
+          }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+            }}>
+              <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Notes</h2>
+              <span style={{ fontSize: "11px", color: "#334155" }}>{notes.length} note{notes.length !== 1 ? "s" : ""}</span>
             </div>
-            <div className="p-5">
-              <div className="bg-slate-50 rounded-lg p-3 mb-3">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-5 h-5 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center text-xs font-semibold">S</div>
-                  <span className="text-xs font-medium text-slate-700">Sarah M.</span>
-                  <span className="text-xs text-slate-400 ml-auto">Mar 14, 11:20 AM</span>
+
+            {/* Existing notes */}
+            {notes.map((note) => (
+              <div key={note.id} style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <div style={{
+                    width: "20px", height: "20px", borderRadius: "50%",
+                    background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "9px", fontWeight: 700, color: "#818CF8",
+                  }}>
+                    {note.is_ai_generated ? "AI" : "U"}
+                  </div>
+                  <span style={{ fontSize: "11px", color: "#475569" }}>
+                    {new Date(note.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </span>
                 </div>
-                <p className="text-sm text-slate-600">Called and left voicemail. Will follow up tomorrow morning.</p>
+                <p style={{ fontSize: "13px", color: "#94A3B8", lineHeight: 1.6, margin: 0 }}>{note.content}</p>
               </div>
-              <div className="relative">
+            ))}
+
+            {/* Add note */}
+            <div style={{ padding: "14px 20px" }}>
+              <div style={{ position: "relative" }}>
                 <textarea
                   rows={2}
-                  placeholder="Add a note..."
-                  className="input resize-none"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Add a note…"
+                  style={{
+                    width: "100%", padding: "10px 12px", borderRadius: "8px",
+                    background: "#070C18", border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#F1F5F9", fontSize: "12px", resize: "none",
+                    outline: "none", boxSizing: "border-box",
+                  }}
                 />
-                <button className="absolute bottom-2.5 right-2.5 btn-primary py-1.5 text-xs">
-                  <Send size={12} /> Save
+                <button
+                  onClick={handleSaveNote}
+                  disabled={!noteText.trim() || savingNote}
+                  style={{
+                    position: "absolute", bottom: "8px", right: "8px",
+                    display: "inline-flex", alignItems: "center", gap: "4px",
+                    padding: "5px 10px", borderRadius: "6px",
+                    background: noteText.trim() ? "linear-gradient(135deg, #6366F1, #8B5CF6)" : "rgba(255,255,255,0.05)",
+                    border: "none", color: noteText.trim() ? "#fff" : "#334155",
+                    fontSize: "11px", fontWeight: 600, cursor: noteText.trim() ? "pointer" : "not-allowed",
+                  }}
+                >
+                  <Plus size={11} /> Save
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right: score, stage, timeline, follow-up */}
-        <div className="space-y-5">
-          {/* Quote-ready score */}
-          <div className="card p-5">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Quote-Ready Score</div>
-            <div className="flex items-center gap-4">
-              <ScoreRing score={LEAD.quoteReadyScore} />
-              <div>
-                <div className="text-sm font-semibold text-slate-800 mb-0.5">
-                  {LEAD.quoteReadyScore >= 80 ? "High quality lead" : LEAD.quoteReadyScore >= 60 ? "Good lead" : "Needs more info"}
-                </div>
-                <div className="text-xs text-slate-500">AI confidence score</div>
-              </div>
+        {/* Right col */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+          {/* Score ring */}
+          <div style={{
+            background: "#0C1220", borderRadius: "14px", padding: "20px",
+            border: "1px solid rgba(255,255,255,0.07)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            display: "flex", flexDirection: "column", alignItems: "center",
+          }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "16px", alignSelf: "flex-start" }}>
+              Quote-Ready Score
             </div>
+            <BigScoreRing score={score} />
+            <div style={{ fontSize: "11px", color: "#334155", marginTop: "10px", textAlign: "center" }}>AI confidence score</div>
           </div>
 
           {/* Pipeline stage */}
-          <div className="card p-5">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Pipeline Stage</div>
-            <div className="space-y-2">
-              {["Intake", "Qualifying", "Quoted", "Negotiating", "Won / Lost"].map((stage) => (
-                <div key={stage} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  stage === LEAD.stage
-                    ? "bg-brand-50 text-brand-700 font-semibold"
-                    : "text-slate-500"
-                }`}>
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    stage === LEAD.stage ? "bg-brand-500" : "bg-slate-200"
-                  }`} />
-                  {stage}
+          <div style={{
+            background: "#0C1220", borderRadius: "14px", padding: "18px",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>
+              Pipeline Stage
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {STATUSES.map((s) => (
+                <div key={s} style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "8px 10px", borderRadius: "8px",
+                  background: s === status ? "rgba(99,102,241,0.08)" : "none",
+                  border: s === status ? "1px solid rgba(99,102,241,0.2)" : "1px solid transparent",
+                }}>
+                  <div style={{
+                    width: "7px", height: "7px", borderRadius: "50%",
+                    background: s === status ? "#6366F1" : "rgba(255,255,255,0.1)",
+                    flexShrink: 0,
+                  }} />
+                  <span style={{ fontSize: "12px", fontWeight: s === status ? 700 : 500, color: s === status ? "#818CF8" : "#334155" }}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </span>
                 </div>
               ))}
             </div>
-            <button className="btn-secondary w-full mt-3 text-xs py-2">Move to next stage</button>
           </div>
 
-          {/* Follow-up */}
-          <div className="card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare size={14} className="text-brand-600" />
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Follow-Up</div>
+          {/* Lead info */}
+          <div style={{
+            background: "#0C1220", borderRadius: "14px", padding: "18px",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>
+              Contact Info
             </div>
-            <div className="bg-brand-50 border border-brand-100 rounded-lg p-3 mb-3">
-              <div className="text-xs font-medium text-brand-700 mb-1">AI draft ready</div>
-              <p className="text-xs text-brand-600 leading-relaxed">
-                "Hi Marcus, just wanted to follow up on your roofing project — we'd love to schedule a free on-site estimate..."
-              </p>
-            </div>
-            <button className="btn-primary w-full text-xs py-2">
-              <Send size={12} /> Send AI follow-up
-            </button>
-          </div>
-
-          {/* Activity timeline */}
-          <div className="card p-5">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Activity</div>
-            <div className="space-y-4">
-              {LEAD.timeline.map((event, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    event.type === "ai" ? "bg-brand-100 text-brand-600" :
-                    event.type === "status" ? "bg-slate-100 text-slate-600" :
-                    event.type === "note" ? "bg-amber-100 text-amber-600" :
-                    "bg-emerald-100 text-emerald-600"
-                  }`}>
-                    {event.type === "ai" ? <Zap size={11} /> :
-                     event.type === "check" ? <CheckCircle2 size={11} /> :
-                     event.type === "note" ? <MessageSquare size={11} /> :
-                     <Clock size={11} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-slate-700">{event.label}</div>
-                    {event.content && (
-                      <div className="text-xs text-slate-500 mt-0.5">{event.content}</div>
-                    )}
-                    <div className="text-xs text-slate-400 mt-0.5">{event.time}</div>
-                  </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {[
+                { label: "Name",     value: name },
+                { label: "Email",    value: email },
+                { label: "Phone",    value: phone },
+                { label: "Agent",    value: submission.agents?.name ?? "Unknown" },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <div style={{ fontSize: "10px", color: "#334155", fontWeight: 600, marginBottom: "2px" }}>{label}</div>
+                  <div style={{ fontSize: "12px", color: "#94A3B8", fontWeight: 600 }}>{value}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
