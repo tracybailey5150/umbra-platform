@@ -3,19 +3,29 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Inbox, Bot, BarChart3,
-  Settings, Users, Bell, ChevronDown,
-  LogOut, Plus, MessageSquare, Zap,
+  LayoutDashboard, Inbox, GitPullRequest, Cpu, BarChart3,
+  Settings, Users, Bell, ChevronDown, ChevronRight,
+  LogOut, Plus, Zap, Shield, HelpCircle,
 } from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/dashboard",   label: "Dashboard",         icon: LayoutDashboard },
-  { href: "/leads",       label: "Leads & Requests",  icon: Inbox,          badge: 24 },
-  { href: "/follow-ups",  label: "Follow-Ups",        icon: MessageSquare,  badge: 3  },
-  { href: "/agents",      label: "Agent Settings",    icon: Bot },
-  { href: "/analytics",   label: "Analytics",         icon: BarChart3 },
-  { href: "/team",        label: "Team Members",      icon: Users },
-  { href: "/settings",    label: "Settings & Billing",icon: Settings },
+const NAV_SECTIONS = [
+  {
+    label: "Operations",
+    items: [
+      { href: "/dashboard",   label: "Overview",       icon: LayoutDashboard, badge: null },
+      { href: "/leads",       label: "Leads",          icon: Inbox,           badge: 24   },
+      { href: "/follow-ups",  label: "Follow-Ups",     icon: GitPullRequest,  badge: 3    },
+      { href: "/analytics",   label: "Analytics",      icon: BarChart3,       badge: null },
+    ],
+  },
+  {
+    label: "Configuration",
+    items: [
+      { href: "/agents",      label: "Agents",         icon: Cpu,             badge: null },
+      { href: "/team",        label: "Team",           icon: Users,           badge: null },
+      { href: "/settings",    label: "Settings",       icon: Settings,        badge: null },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -23,106 +33,148 @@ export function AppSidebar() {
 
   return (
     <aside style={{
-      position: 'fixed', left: 0, top: 0, bottom: 0, width: '240px', zIndex: 30,
-      background: 'linear-gradient(180deg, #0C1220 0%, #080E1A 100%)',
-      borderRight: '1px solid rgba(255,255,255,0.07)',
+      position: 'fixed', left: 0, top: 0, bottom: 0, width: '248px', zIndex: 30,
+      background: '#080D18',
+      borderRight: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', flexDirection: 'column',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     }}>
 
       {/* Logo */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            width: '34px', height: '34px', borderRadius: '9px', flexShrink: 0,
+            background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(99,102,241,0.4)',
+            boxShadow: '0 0 0 1px rgba(99,102,241,0.3), 0 4px 16px rgba(99,102,241,0.25)',
           }}>
             <Zap size={16} color="#fff" strokeWidth={2.5} />
           </div>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#F1F5F9', letterSpacing: '-0.02em' }}>Umbra</div>
-            <div style={{ fontSize: '9px', color: '#334155', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>AI Agent Platform</div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.03em' }}>Umbra</div>
+            <div style={{ fontSize: '10px', color: '#1E3A5F', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>AI Platform</div>
           </div>
         </div>
       </div>
 
-      {/* Org Switcher */}
-      <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* Workspace Switcher */}
+      <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <button style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', transition: 'all 0.15s',
+          padding: '7px 10px', borderRadius: '8px',
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          cursor: 'pointer', transition: 'all 0.15s',
         }}
-          onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
-          onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+          onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+          onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
             <div style={{
-              width: '24px', height: '24px', borderRadius: '6px', flexShrink: 0,
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              width: '22px', height: '22px', borderRadius: '5px', flexShrink: 0,
+              background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '11px', fontWeight: 700, color: '#fff',
+              fontSize: '10px', fontWeight: 700, color: '#fff',
             }}>A</div>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: '#94A3B8' }}>Acme Services</span>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#94A3B8', lineHeight: 1.2 }}>Acme Services</div>
+              <div style={{ fontSize: '10px', color: '#1E3A5F', marginTop: '1px' }}>Pro Plan</div>
+            </div>
           </div>
-          <ChevronDown size={13} color="#475569" />
+          <ChevronDown size={12} color="#334155" />
         </button>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '10px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-        <div style={{ fontSize: '9px', fontWeight: 700, color: '#1E293B', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px 8px' }}>
-          WORKSPACE
-        </div>
-        {NAV_ITEMS.map(({ href, label, icon: Icon, badge }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <Link key={href} href={href} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: '10px', padding: '8px 10px', borderRadius: '8px',
-              background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
-              border: active ? '1px solid rgba(99,102,241,0.2)' : '1px solid transparent',
-              color: active ? '#818CF8' : '#475569',
-              fontSize: '13px', fontWeight: active ? 600 : 400,
-              transition: 'all 0.15s',
+      {/* Nav Sections */}
+      <nav style={{ flex: 1, padding: '10px 10px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.label}>
+            {/* Section label */}
+            <div style={{
+              fontSize: '10px', fontWeight: 700, color: '#1E3A5F',
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              padding: '0 8px 6px',
             }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Icon size={15} strokeWidth={active ? 2.5 : 1.8} />
-                {label}
-              </span>
-              {badge !== undefined && (
-                <span style={{
-                  fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '99px',
-                  background: active ? 'rgba(99,102,241,0.25)' : 'rgba(71,85,105,0.3)',
-                  color: active ? '#818CF8' : '#64748B',
-                }}>{badge}</span>
-              )}
-            </Link>
-          );
-        })}
+              {section.label}
+            </div>
+            {/* Items */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              {section.items.map(({ href, label, icon: Icon, badge }) => {
+                const active = pathname === href || pathname.startsWith(href + '/');
+                return (
+                  <Link key={href} href={href} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '7px 10px', borderRadius: '7px',
+                    background: active ? 'rgba(79,70,229,0.12)' : 'transparent',
+                    border: active ? '1px solid rgba(79,70,229,0.18)' : '1px solid transparent',
+                    color: active ? '#A5B4FC' : '#475569',
+                    fontSize: '13px', fontWeight: active ? 600 : 400,
+                    textDecoration: 'none', transition: 'all 0.12s',
+                    cursor: 'pointer',
+                  }}
+                    onMouseOver={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#94A3B8'; } }}
+                    onMouseOut={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#475569'; } }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                      <span style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '20px', height: '20px',
+                      }}>
+                        <Icon size={14} strokeWidth={active ? 2.5 : 1.8} />
+                      </span>
+                      {label}
+                    </span>
+                    {badge !== null && badge !== undefined && (
+                      <span style={{
+                        fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '99px',
+                        background: active ? 'rgba(99,102,241,0.2)' : 'rgba(30,42,74,0.6)',
+                        color: active ? '#A5B4FC' : '#334155',
+                        minWidth: '18px', textAlign: 'center',
+                      }}>{badge}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      {/* New Agent CTA */}
-      <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <Link href="/agents/new" style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-          padding: '9px', borderRadius: '8px',
-          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-          color: '#fff', fontSize: '12px', fontWeight: 600,
-          boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
-          transition: 'all 0.15s',
+      {/* Security badge */}
+      <div style={{ padding: '0 12px 8px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: '6px 10px', borderRadius: '7px',
+          background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.1)',
         }}>
-          <Plus size={14} strokeWidth={2.5} />
+          <Shield size={11} color="#10B981" />
+          <span style={{ fontSize: '10px', color: '#10B981', fontWeight: 600 }}>SOC 2 Ready · Encrypted</span>
+        </div>
+      </div>
+
+      {/* New Agent CTA */}
+      <div style={{ padding: '0 12px 10px' }}>
+        <Link href="/agents/new" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          padding: '9px', borderRadius: '8px',
+          background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+          color: '#fff', fontSize: '12px', fontWeight: 600,
+          textDecoration: 'none',
+          boxShadow: '0 0 0 1px rgba(99,102,241,0.3), 0 4px 16px rgba(79,70,229,0.3)',
+          transition: 'all 0.15s',
+          letterSpacing: '0.01em',
+        }}>
+          <Plus size={13} strokeWidth={2.5} />
           New Agent
         </Link>
       </div>
 
-      {/* User */}
-      <div style={{ padding: '10px 12px 16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* User footer */}
+      <div style={{ padding: '8px 12px 14px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
+          padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
         }}
           onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
           onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
@@ -130,17 +182,21 @@ export function AppSidebar() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
             <div style={{
               width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, #334155, #1E293B)',
+              background: 'linear-gradient(135deg, #1E293B, #0F172A)',
               border: '1px solid rgba(255,255,255,0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '11px', fontWeight: 600, color: '#94A3B8',
-            }}>JD</div>
+              fontSize: '10px', fontWeight: 700, color: '#64748B',
+              letterSpacing: '0.02em',
+            }}>TB</div>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#94A3B8', lineHeight: 1.2 }}>John Doe</div>
-              <div style={{ fontSize: '10px', color: '#334155', marginTop: '1px' }}>Owner</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', lineHeight: 1.3 }}>Tracy Bailey</div>
+              <div style={{ fontSize: '10px', color: '#1E3A5F', marginTop: '1px' }}>Owner</div>
             </div>
           </div>
-          <LogOut size={13} color="#334155" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <HelpCircle size={13} color="#1E3A5F" />
+            <LogOut size={13} color="#1E3A5F" />
+          </div>
         </div>
       </div>
     </aside>
@@ -150,37 +206,58 @@ export function AppSidebar() {
 export function AppTopBar() {
   return (
     <header style={{
-      position: 'fixed', top: 0, left: '240px', right: 0, height: '56px', zIndex: 20,
-      background: 'rgba(7,12,24,0.85)', backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      position: 'fixed', top: 0, left: '248px', right: 0, height: '52px', zIndex: 20,
+      background: 'rgba(8,13,24,0.92)', backdropFilter: 'blur(16px)',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 28px',
+      padding: '0 24px',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px',
-          background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)',
-        }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block', animation: 'pulseDot 2s infinite' }} />
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#10B981' }}>All systems operational</span>
-        </div>
+      {/* Breadcrumb / context */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontSize: '11px', color: '#1E3A5F', fontWeight: 500 }}>Acme Services</span>
+        <ChevronRight size={11} color="#1E293B" />
+        <span style={{ fontSize: '11px', color: '#334155', fontWeight: 500 }}>Workspace</span>
       </div>
+
+      {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Status */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '5px',
+          padding: '4px 10px', borderRadius: '6px',
+          background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.12)',
+        }}>
+          <span style={{
+            width: '5px', height: '5px', borderRadius: '50%', background: '#10B981',
+            display: 'inline-block', boxShadow: '0 0 6px rgba(16,185,129,0.6)',
+          }} />
+          <span style={{ fontSize: '11px', fontWeight: 600, color: '#10B981', letterSpacing: '0.02em' }}>Operational</span>
+        </div>
+
+        {/* Notifications */}
         <button style={{
-          position: 'relative', width: '34px', height: '34px', borderRadius: '8px',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+          position: 'relative', width: '32px', height: '32px', borderRadius: '7px',
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
         }}>
-          <Bell size={16} color="#475569" />
-          <span style={{ position: 'absolute', top: '8px', right: '8px', width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444', border: '1.5px solid #070C18' }} />
+          <Bell size={14} color="#334155" />
+          <span style={{
+            position: 'absolute', top: '7px', right: '7px',
+            width: '5px', height: '5px', borderRadius: '50%',
+            background: '#EF4444', border: '1.5px solid #080D18',
+          }} />
         </button>
+
+        {/* Avatar */}
         <div style={{
-          width: '34px', height: '34px', borderRadius: '50%',
-          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+          width: '32px', height: '32px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '12px', fontWeight: 700, color: '#fff', cursor: 'pointer',
-          boxShadow: '0 0 12px rgba(99,102,241,0.3)',
-        }}>JD</div>
+          fontSize: '11px', fontWeight: 700, color: '#fff', cursor: 'pointer',
+          boxShadow: '0 0 0 2px rgba(79,70,229,0.2)',
+          letterSpacing: '0.02em',
+        }}>TB</div>
       </div>
     </header>
   );
