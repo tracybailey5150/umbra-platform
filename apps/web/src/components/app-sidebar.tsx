@@ -42,7 +42,7 @@ export function AppSidebar() {
 
       {/* Logo */}
       <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <div style={{
             width: '34px', height: '34px', borderRadius: '9px', flexShrink: 0,
             background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
@@ -55,7 +55,7 @@ export function AppSidebar() {
             <div style={{ fontSize: '16px', fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.03em' }}>Umbra</div>
             <div style={{ fontSize: '10px', color: '#1E3A5F', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>AI Platform</div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Workspace Switcher */}
