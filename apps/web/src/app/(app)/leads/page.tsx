@@ -231,6 +231,15 @@ export default function LeadsPage() {
     });
   }
 
+  // ─── Stat strip values ──────────────────────────────────────────────────────
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const newToday = leads.filter((l) => new Date(l.submittedAt) >= today).length;
+  const scoredLeads = leads.filter((l) => l.score > 0);
+  const avgScore = scoredLeads.length > 0
+    ? Math.round(scoredLeads.reduce((sum, l) => sum + l.score, 0) / scoredLeads.length)
+    : 0;
+
   return (
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
       {/* Header */}
@@ -270,6 +279,16 @@ export default function LeadsPage() {
             <Download size={14} />
             Export
           </button>
+          <Link href="/agents/new" style={{
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            padding: "9px 16px", borderRadius: "8px",
+            background: "linear-gradient(135deg, #4F46E5, #6366F1)",
+            color: "#fff", fontSize: "13px", fontWeight: 600,
+            boxShadow: "0 4px 16px rgba(99,102,241,0.3)", textDecoration: "none",
+          }}>
+            <Plus size={14} />
+            New Lead
+          </Link>
           <Link href="/leads/new" style={{
             display: "inline-flex", alignItems: "center", gap: "6px",
             padding: "9px 16px", borderRadius: "8px",
@@ -281,6 +300,33 @@ export default function LeadsPage() {
             Add manually
           </Link>
         </div>
+      </div>
+
+      {/* Stat Strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px", marginBottom: "20px" }}>
+        {[
+          { label: "Total Leads", value: loading ? "—" : leads.length, color: "#A5B4FC", bg: "rgba(99,102,241,0.1)" },
+          { label: "New Today",   value: loading ? "—" : newToday,     color: "#34D399", bg: "rgba(16,185,129,0.1)" },
+          { label: "Avg Score",   value: loading ? "—" : avgScore,     color: "#FCD34D", bg: "rgba(245,158,11,0.1)" },
+        ].map((s) => (
+          <div key={s.label} style={{
+            background: "#0B1120", borderRadius: "14px", padding: "18px 20px",
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+            display: "flex", alignItems: "center", gap: "14px",
+          }}>
+            <div style={{
+              width: "40px", height: "40px", borderRadius: "10px",
+              background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.color }} />
+            </div>
+            <div>
+              <div style={{ fontSize: "26px", fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: "12px", color: "#64748B", marginTop: "4px" }}>{s.label}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}

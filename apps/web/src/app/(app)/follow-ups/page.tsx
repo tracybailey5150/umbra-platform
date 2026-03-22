@@ -180,6 +180,7 @@ export default function FollowUpsPage() {
   const [loading, setLoading] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"pending" | "sent" | "all">("pending");
 
   useEffect(() => {
     const supabase = getBrowserClient();
@@ -284,6 +285,14 @@ export default function FollowUpsPage() {
   const sent      = followUps.filter(f => f.status === "sent");
   const completed = followUps.filter(f => ["responded","skipped","failed"].includes(f.status));
   const respondedCount = followUps.filter(f => f.status === "responded").length;
+  const sentThisWeek = followUps.filter(f => {
+    if (f.status !== "sent" || !f.sent_at) return false;
+    const diff = Date.now() - new Date(f.sent_at).getTime();
+    return diff <= 7 * 24 * 60 * 60 * 1000;
+  }).length;
+  const responseRate = sent.length > 0 ? Math.round((respondedCount / sent.length) * 100) : 0;
+
+  const tabItems = activeTab === "pending" ? pending : activeTab === "sent" ? sent : followUps;
 
   if (loading) {
     return (
@@ -338,144 +347,153 @@ export default function FollowUpsPage() {
       </div>
 
       {/* Stats strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px", marginBottom: "24px" }}>
         {[
-          { label: "Pending",       value: pending.length,   color: "#FCD34D", bg: "rgba(245,158,11,0.1)" },
-          { label: "Sent",          value: sent.length,      color: "#60A5FA", bg: "rgba(59,130,246,0.1)" },
-          { label: "Responded",     value: respondedCount,   color: "#34D399", bg: "rgba(16,185,129,0.1)" },
-          { label: "Total",         value: followUps.length, color: "#A78BFA", bg: "rgba(139,92,246,0.1)" },
+          { label: "Pending",        value: pending.length,   color: "#FCD34D", bg: "rgba(245,158,11,0.1)" },
+          { label: "Sent This Week", value: sentThisWeek,     color: "#60A5FA", bg: "rgba(59,130,246,0.1)" },
+          { label: "Response Rate",  value: `${responseRate}%`, color: "#34D399", bg: "rgba(16,185,129,0.1)" },
         ].map((s) => (
           <div key={s.label} style={{
-            background: "#0C1220", borderRadius: "14px", padding: "16px",
-            border: "1px solid rgba(255,255,255,0.07)",
+            background: "#0B1120", borderRadius: "14px", padding: "18px 20px",
+            border: "1px solid rgba(255,255,255,0.06)",
             boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+            display: "flex", alignItems: "center", gap: "14px",
           }}>
             <div style={{
-              width: "36px", height: "36px", borderRadius: "8px",
-              background: s.bg, display: "flex", alignItems: "center", justifyContent: "center",
-              marginBottom: "10px",
+              width: "40px", height: "40px", borderRadius: "10px",
+              background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
             }}>
               <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.color }} />
             </div>
-            <div style={{ fontSize: "26px", fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
-            <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>{s.label}</div>
+            <div>
+              <div style={{ fontSize: "26px", fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: "12px", color: "#64748B", marginTop: "4px" }}>{s.label}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Empty state */}
-      {followUps.length === 0 && (
-        <div style={{
-          background: "#0C1220", borderRadius: "14px", padding: "64px 24px",
-          border: "1px solid rgba(255,255,255,0.07)", textAlign: "center",
-        }}>
-          <CheckCircle2 size={32} color="#34D399" style={{ margin: "0 auto 12px" }} />
-          <div style={{ fontSize: "16px", fontWeight: 700, color: "#94A3B8", marginBottom: "8px" }}>No follow-ups due</div>
-          <div style={{ fontSize: "13px", color: "#334155" }}>Check back when leads go cold — follow-ups are generated automatically.</div>
-        </div>
-      )}
+      {/* Tabs */}
+      <div style={{
+        display: "flex", gap: "2px", background: "rgba(255,255,255,0.04)",
+        borderRadius: "10px", padding: "4px", marginBottom: "20px", width: "fit-content",
+      }}>
+        {(["pending", "sent", "all"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: "6px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+              border: "none", cursor: "pointer", transition: "all 0.15s",
+              background: activeTab === tab ? "#0B1120" : "transparent",
+              color: activeTab === tab ? "#F1F5F9" : "#64748B",
+              boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.4)" : "none",
+            }}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            <span style={{
+              marginLeft: "6px", padding: "1px 6px", borderRadius: "99px", fontSize: "11px",
+              background: activeTab === tab ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)",
+              color: activeTab === tab ? "#A5B4FC" : "#475569",
+            }}>
+              {tab === "pending" ? pending.length : tab === "sent" ? sent.length : followUps.length}
+            </span>
+          </button>
+        ))}
+      </div>
 
       {/* Content grid */}
-      {followUps.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "20px" }}>
-          {/* Main column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {pending.length > 0 && (
-              <>
-                <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#94A3B8", margin: "0 0 4px" }}>
-                  Due Now · {pending.length} pending
-                </h2>
-                {pending.map(fu => (
-                  <FollowUpCard
-                    key={fu.id} fu={fu} showActions
-                    onSend={() => handleSend(fu.id)}
-                    onSkip={() => handleSkip(fu.id)}
-                    sending={sendingId === fu.id}
-                  />
-                ))}
-              </>
-            )}
-
-            {sent.length > 0 && (
-              <>
-                <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#94A3B8", margin: "12px 0 4px" }}>
-                  Sent · {sent.length}
-                </h2>
-                {sent.map(fu => <FollowUpCard key={fu.id} fu={fu} />)}
-              </>
-            )}
-
-            {pending.length === 0 && sent.length === 0 && (
-              <div style={{
-                background: "#0C1220", borderRadius: "14px", padding: "48px",
-                border: "1px solid rgba(255,255,255,0.07)", textAlign: "center",
-              }}>
-                <CheckCircle2 size={28} color="#34D399" style={{ margin: "0 auto 12px" }} />
-                <div style={{ fontSize: "14px", fontWeight: 600, color: "#94A3B8" }}>All caught up!</div>
-                <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>No pending follow-ups right now.</div>
-              </div>
-            )}
-          </div>
-
-          {/* Right column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {/* Completed */}
-            {completed.length > 0 && (
-              <div style={{
-                background: "#0C1220", borderRadius: "14px",
-                border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
-              }}>
-                <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Completed</h2>
-                </div>
-                {completed.map((fu, idx) => (
-                  <div key={fu.id} style={{
-                    padding: "12px 18px",
-                    borderBottom: idx < completed.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#CBD5E1" }}>{fu.leadName}</span>
-                      <StatusBadge status={fu.status} />
-                    </div>
-                    <p style={{ fontSize: "11px", color: "#334155", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {fu.requestSummary}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Automation settings */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "20px" }}>
+        {/* Main column */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {tabItems.length === 0 ? (
             <div style={{
-              background: "#0C1220", borderRadius: "14px", padding: "18px",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "#0B1120", borderRadius: "14px", padding: "64px 24px",
+              border: "1px solid rgba(255,255,255,0.06)", textAlign: "center",
             }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-                <Zap size={15} color="#6366F1" />
-                <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Automation</h2>
+              <CheckCircle2 size={32} color="#34D399" style={{ margin: "0 auto 12px" }} />
+              <div style={{ fontSize: "16px", fontWeight: 700, color: "#94A3B8", marginBottom: "8px" }}>
+                {activeTab === "pending" ? "All caught up!" : activeTab === "sent" ? "Nothing sent yet" : "No follow-ups"}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {[
-                  { label: "Auto follow-up",     value: "Enabled" },
-                  { label: "First follow-up",    value: "24h after submission" },
-                  { label: "Max follow-ups",     value: "3 per lead" },
-                  { label: "AI personalization", value: "On" },
-                ].map((s) => (
-                  <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: "12px", color: "#475569" }}>{s.label}</span>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#94A3B8" }}>{s.value}</span>
+              <div style={{ fontSize: "13px", color: "#475569" }}>
+                {activeTab === "pending"
+                  ? "No pending follow-ups right now. Check back when leads go cold."
+                  : activeTab === "sent"
+                  ? "Sent follow-ups will appear here."
+                  : "Follow-ups are generated automatically when leads go cold."}
+              </div>
+            </div>
+          ) : (
+            tabItems.map(fu => (
+              <FollowUpCard
+                key={fu.id} fu={fu}
+                showActions={fu.status === "pending"}
+                onSend={() => handleSend(fu.id)}
+                onSkip={() => handleSkip(fu.id)}
+                sending={sendingId === fu.id}
+              />
+            ))
+          )}
+        </div>
+
+        {/* Right column */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Completed */}
+          {completed.length > 0 && (
+            <div style={{
+              background: "#0B1120", borderRadius: "14px",
+              border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden",
+            }}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Completed</h2>
+              </div>
+              {completed.map((fu, idx) => (
+                <div key={fu.id} style={{
+                  padding: "12px 18px",
+                  borderBottom: idx < completed.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "#CBD5E1" }}>{fu.leadName}</span>
+                    <StatusBadge status={fu.status} />
                   </div>
-                ))}
-              </div>
-              <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <Link href="/agents" style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#6366F1", fontWeight: 600, textDecoration: "none" }}>
-                  Edit automation settings <ArrowRight size={12} />
-                </Link>
-              </div>
+                  <p style={{ fontSize: "11px", color: "#334155", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {fu.requestSummary}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Automation settings */}
+          <div style={{
+            background: "#0B1120", borderRadius: "14px", padding: "18px",
+            border: "1px solid rgba(255,255,255,0.06)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+              <Zap size={15} color="#6366F1" />
+              <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Automation</h2>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {[
+                { label: "Auto follow-up",     value: "Enabled" },
+                { label: "First follow-up",    value: "24h after submission" },
+                { label: "Max follow-ups",     value: "3 per lead" },
+                { label: "AI personalization", value: "On" },
+              ].map((s) => (
+                <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "12px", color: "#475569" }}>{s.label}</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#94A3B8" }}>{s.value}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              <Link href="/agents" style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#6366F1", fontWeight: 600, textDecoration: "none" }}>
+                Edit automation settings <ArrowRight size={12} />
+              </Link>
             </div>
           </div>
         </div>
-      )}
+      </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
