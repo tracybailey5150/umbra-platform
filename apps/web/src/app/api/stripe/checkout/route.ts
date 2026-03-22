@@ -3,7 +3,9 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_placeholder");
+}
 
 // Stripe price IDs (test mode)
 const PRICE_IDS: Record<string, string> = {
@@ -29,7 +31,8 @@ export async function POST(request: NextRequest) {
     // Find or create Stripe customer
     let customerId: string | undefined;
     if (userEmail) {
-      const existing = await stripe.customers.list({ email: userEmail, limit: 1 });
+      const stripe = getStripe();
+    const existing = await stripe.customers.list({ email: userEmail, limit: 1 });
       if (existing.data.length > 0) {
         customerId = existing.data[0].id;
       } else {
