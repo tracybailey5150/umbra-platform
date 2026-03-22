@@ -64,16 +64,16 @@ export default function TeamPage() {
       {/* Invite form — collapsible */}
       {showInvite && (
         <div style={{
-          background: "#0B1120", borderRadius: "14px", padding: "20px",
-          border: "1px solid rgba(255,255,255,0.06)", marginBottom: "20px",
+          background: "#0C1220", borderRadius: "14px", padding: "22px",
+          border: "1px solid rgba(255,255,255,0.07)", marginBottom: "20px",
           boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
         }}>
-          <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 14px" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 16px" }}>
             Invite a team member
           </h2>
           <div style={{ display: "flex", alignItems: "flex-end", gap: "12px", flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: "200px" }}>
-              <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
                 Email address
               </label>
               <input
@@ -81,24 +81,26 @@ export default function TeamPage() {
                 placeholder="colleague@company.com"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
+                onFocus={(e) => { e.currentTarget.style.border = "1px solid rgba(99,102,241,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+                onBlur={(e) => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.10)"; e.currentTarget.style.boxShadow = "none"; }}
                 style={{
-                  width: "100%", padding: "9px 12px", borderRadius: "8px",
-                  background: "#070C18", border: "1px solid rgba(255,255,255,0.08)",
+                  width: "100%", height: "40px", padding: "0 12px", borderRadius: "8px",
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
                   color: "#F1F5F9", fontSize: "13px", outline: "none",
-                  boxSizing: "border-box",
+                  boxSizing: "border-box", transition: "border 0.15s, box-shadow 0.15s",
                 }}
               />
             </div>
             <div style={{ minWidth: "160px" }}>
-              <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
                 Role
               </label>
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
                 style={{
-                  width: "100%", padding: "9px 12px", borderRadius: "8px",
-                  background: "#070C18", border: "1px solid rgba(255,255,255,0.08)",
+                  width: "100%", height: "40px", padding: "0 12px", borderRadius: "8px",
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
                   color: "#F1F5F9", fontSize: "13px", outline: "none",
                 }}
               >
@@ -108,10 +110,11 @@ export default function TeamPage() {
             </div>
             <button style={{
               display: "inline-flex", alignItems: "center", gap: "6px",
-              padding: "9px 16px", borderRadius: "8px",
-              background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
-              color: "#818CF8", fontSize: "13px", fontWeight: 600, cursor: "pointer",
-              whiteSpace: "nowrap",
+              padding: "10px 18px", borderRadius: "8px",
+              background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+              color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer",
+              border: "none", whiteSpace: "nowrap",
+              boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
             }}>
               <Mail size={14} />
               Send invite
@@ -122,8 +125,8 @@ export default function TeamPage() {
 
       {/* Role filter tabs */}
       <div style={{
-        display: "flex", gap: "2px", background: "rgba(255,255,255,0.04)",
-        borderRadius: "10px", padding: "4px", marginBottom: "20px", width: "fit-content",
+        display: "flex", gap: "4px", background: "rgba(255,255,255,0.04)",
+        borderRadius: "12px", padding: "5px", marginBottom: "20px", width: "fit-content",
       }}>
         {ROLE_TABS.map((tab) => {
           const count = tab.value === "all" ? MEMBERS.length : MEMBERS.filter(m => m.role === tab.value).length;
@@ -132,18 +135,18 @@ export default function TeamPage() {
               key={tab.value}
               onClick={() => setRoleFilter(tab.value)}
               style={{
-                padding: "6px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+                padding: "7px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
                 border: "none", cursor: "pointer", transition: "all 0.15s",
-                background: roleFilter === tab.value ? "#0B1120" : "transparent",
-                color: roleFilter === tab.value ? "#F1F5F9" : "#64748B",
-                boxShadow: roleFilter === tab.value ? "0 1px 4px rgba(0,0,0,0.4)" : "none",
+                background: roleFilter === tab.value ? "linear-gradient(135deg, #6366F1, #8B5CF6)" : "transparent",
+                color: roleFilter === tab.value ? "#fff" : "#64748B",
+                boxShadow: roleFilter === tab.value ? "0 2px 8px rgba(99,102,241,0.35)" : "none",
               }}
             >
               {tab.label}
               <span style={{
                 marginLeft: "6px", padding: "1px 6px", borderRadius: "99px", fontSize: "11px",
-                background: roleFilter === tab.value ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)",
-                color: roleFilter === tab.value ? "#A5B4FC" : "#475569",
+                background: roleFilter === tab.value ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)",
+                color: roleFilter === tab.value ? "#fff" : "#475569",
               }}>
                 {count}
               </span>
@@ -163,22 +166,26 @@ export default function TeamPage() {
             <div
               key={m.id}
               style={{
-                background: "#0B1120", borderRadius: "14px", padding: "16px 20px",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: "#0C1220", borderRadius: "14px", padding: "16px 20px",
+                border: "1px solid rgba(255,255,255,0.07)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
                 display: "flex", alignItems: "center", gap: "14px",
-                transition: "background 0.15s",
+                transition: "background 0.15s, box-shadow 0.15s",
               }}
-              onMouseOver={(e) => (e.currentTarget.style.background = "rgba(11,17,32,0.8)")}
-              onMouseOut={(e) => (e.currentTarget.style.background = "#0B1120")}
+              onMouseOver={(e) => { e.currentTarget.style.background = "rgba(14,20,38,0.9)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.4)"; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = "#0C1220"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.3)"; }}
             >
               {/* Avatar */}
               <div style={{
-                width: "40px", height: "40px", borderRadius: "50%", flexShrink: 0,
-                background: m.status === "invited" ? "rgba(255,255,255,0.05)" : `${avatarColor}20`,
-                border: `1px solid ${m.status === "invited" ? "rgba(255,255,255,0.08)" : `${avatarColor}40`}`,
+                width: "42px", height: "42px", borderRadius: "50%", flexShrink: 0,
+                background: m.status === "invited"
+                  ? "rgba(255,255,255,0.04)"
+                  : `linear-gradient(135deg, ${avatarColor}30, ${avatarColor}10)`,
+                border: `1.5px solid ${m.status === "invited" ? "rgba(255,255,255,0.08)" : `${avatarColor}50`}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "13px", fontWeight: 700,
                 color: m.status === "invited" ? "#475569" : avatarColor,
+                boxShadow: m.status === "invited" ? "none" : `0 0 12px ${avatarColor}20`,
               }}>
                 {m.avatar}
               </div>

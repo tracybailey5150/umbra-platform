@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from "recharts";
 import { TrendingUp, TrendingDown, Zap, Users, DollarSign } from "lucide-react";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
@@ -30,11 +30,32 @@ const AGENT_PERF = [
 ];
 
 const SUMMARY_STATS = [
-  { label: "Total Submissions", value: "118",   delta: "+14%", up: true,  icon: Zap,       color: "#6366F1" },
-  { label: "Conversion Rate",   value: "21.2%", delta: "+3.1%",up: true,  icon: TrendingUp, color: "#10B981" },
-  { label: "Avg Lead Score",    value: "76",    delta: "+4pts",up: true,  icon: Users,      color: "#F59E0B" },
-  { label: "Pipeline Value",    value: "$354k", delta: "+22%", up: true,  icon: DollarSign, color: "#8B5CF6" },
+  { label: "Total Submissions", value: "118",   delta: "+14%", up: true,  icon: Zap,       color: "#6366F1", glow: "rgba(99,102,241,0.18)",  sparkline: [8,10,9,14,12,16,14,18,16,20,18,22] },
+  { label: "Conversion Rate",   value: "21.2%", delta: "+3.1%",up: true,  icon: TrendingUp, color: "#10B981", glow: "rgba(16,185,129,0.18)", sparkline: [14,16,15,18,17,19,18,21,20,22,21,24] },
+  { label: "Avg Lead Score",    value: "76",    delta: "+4pts",up: true,  icon: Users,      color: "#F59E0B", glow: "rgba(245,158,11,0.18)", sparkline: [60,65,62,68,66,70,68,72,70,74,73,76] },
+  { label: "Pipeline Value",    value: "$354k", delta: "+22%", up: true,  icon: DollarSign, color: "#8B5CF6", glow: "rgba(139,92,246,0.18)", sparkline: [180,210,195,240,220,270,250,300,280,330,310,354] },
 ];
+
+// ─── Sparkline ────────────────────────────────────────────────────────────────
+
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  const d = data.map((v, i) => ({ i, v }));
+  return (
+    <ResponsiveContainer width="100%" height={36}>
+      <AreaChart data={d} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+        <defs>
+          <linearGradient id={`sg-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.5}
+          fill={`url(#sg-${color.replace('#','')})`} dot={false} />
+        <Tooltip contentStyle={{ display: "none" }} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
 
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
 
@@ -93,26 +114,35 @@ export default function AnalyticsPage() {
               background: "#0C1220", borderRadius: "14px", padding: "20px",
               border: "1px solid rgba(255,255,255,0.07)",
               boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              position: "relative", overflow: "hidden",
             }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "12px" }}>
+              {/* Glow blob */}
+              <div style={{
+                position: "absolute", top: "-20px", right: "-20px",
+                width: "100px", height: "100px", borderRadius: "50%",
+                background: `radial-gradient(circle, ${s.glow} 0%, transparent 70%)`,
+                pointerEvents: "none",
+              }} />
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div style={{
-                  width: "32px", height: "32px", borderRadius: "8px",
-                  background: `${s.color}15`,
+                  width: "34px", height: "34px", borderRadius: "8px",
+                  background: `${s.color}18`,
                   border: `1px solid ${s.color}25`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <Icon size={15} color={s.color} />
                 </div>
                 <span style={{
-                  fontSize: "11px", fontWeight: 700, color: "#34D399",
+                  fontSize: "11px", fontWeight: 700, color: s.up ? "#34D399" : "#F87171",
                   display: "flex", alignItems: "center", gap: "2px",
                 }}>
                   {s.up ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                   {s.delta}
                 </span>
               </div>
-              <div style={{ fontSize: "26px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>{s.label}</div>
+              <div style={{ fontSize: "28px", fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.03em", lineHeight: 1, marginBottom: "4px" }}>{s.value}</div>
+              <div style={{ fontSize: "12px", color: "#475569", marginBottom: "14px" }}>{s.label}</div>
+              <Sparkline data={s.sparkline} color={s.color} />
             </div>
           );
         })}
@@ -243,7 +273,19 @@ export default function AnalyticsPage() {
               </div>
               <span style={{ fontSize: "13px", color: "#94A3B8" }}>{a.avgScore}</span>
             </div>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "#34D399" }}>{a.convRate}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{
+                width: "50px", height: "5px", borderRadius: "99px",
+                background: "rgba(255,255,255,0.06)", overflow: "hidden",
+              }}>
+                <div style={{
+                  height: "100%", width: a.convRate,
+                  borderRadius: "99px",
+                  background: "linear-gradient(90deg, #10B981, #34D399)",
+                }} />
+              </div>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "#34D399" }}>{a.convRate}</span>
+            </div>
             <div style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9" }}>{a.revenue}</div>
           </div>
         ))}

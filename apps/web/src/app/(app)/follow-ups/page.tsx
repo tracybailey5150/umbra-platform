@@ -77,11 +77,13 @@ function FollowUpCard({
   sending?: boolean;
 }) {
   const daysSinceScheduled = daysSince(fu.scheduled_for);
+  const accentColor = fu.status === "pending" ? "#6366F1" : fu.status === "sent" ? "#60A5FA" : fu.status === "responded" ? "#34D399" : "#475569";
   return (
     <div style={{
       background: "#0C1220", borderRadius: "12px", padding: "16px",
       border: "1px solid rgba(255,255,255,0.07)",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+      borderLeft: `3px solid ${accentColor}`,
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
@@ -130,9 +132,16 @@ function FollowUpCard({
           {fu.body ?? "No message body."}
         </p>
         {fu.is_ai_generated && (
-          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "8px", fontSize: "11px", color: "#6366F1" }}>
-            <Zap size={10} />
-            AI-generated · ready to send
+          <div style={{ marginTop: "8px" }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: "4px",
+              fontSize: "11px", fontWeight: 600, padding: "3px 8px", borderRadius: "99px",
+              background: "rgba(99,102,241,0.15)", color: "#818CF8",
+              border: "1px solid rgba(99,102,241,0.25)",
+            }}>
+              <Zap size={10} />
+              AI-generated · ready to send
+            </span>
           </div>
         )}
       </div>
@@ -349,52 +358,61 @@ export default function FollowUpsPage() {
       {/* Stats strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px", marginBottom: "24px" }}>
         {[
-          { label: "Pending",        value: pending.length,   color: "#FCD34D", bg: "rgba(245,158,11,0.1)" },
-          { label: "Sent This Week", value: sentThisWeek,     color: "#60A5FA", bg: "rgba(59,130,246,0.1)" },
-          { label: "Response Rate",  value: `${responseRate}%`, color: "#34D399", bg: "rgba(16,185,129,0.1)" },
+          { label: "Pending",        value: pending.length,     color: "#FCD34D", glow: "rgba(245,158,11,0.18)",  bg: "rgba(245,158,11,0.1)",  delta: "action required" },
+          { label: "Sent This Week", value: sentThisWeek,       color: "#60A5FA", glow: "rgba(59,130,246,0.18)",  bg: "rgba(59,130,246,0.1)",  delta: "last 7 days" },
+          { label: "Response Rate",  value: `${responseRate}%`, color: "#34D399", glow: "rgba(16,185,129,0.18)",  bg: "rgba(16,185,129,0.1)",  delta: "of sent follow-ups" },
         ].map((s) => (
           <div key={s.label} style={{
-            background: "#0B1120", borderRadius: "14px", padding: "18px 20px",
-            border: "1px solid rgba(255,255,255,0.06)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-            display: "flex", alignItems: "center", gap: "14px",
+            background: "#0C1220", borderRadius: "14px", padding: "20px",
+            border: "1px solid rgba(255,255,255,0.07)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            position: "relative", overflow: "hidden",
           }}>
+            {/* Glow blob */}
             <div style={{
-              width: "40px", height: "40px", borderRadius: "10px",
-              background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.color }} />
+              position: "absolute", top: "-20px", right: "-20px",
+              width: "100px", height: "100px", borderRadius: "50%",
+              background: `radial-gradient(circle, ${s.glow} 0%, transparent 70%)`,
+              pointerEvents: "none",
+            }} />
+            <div style={{ marginBottom: "14px" }}>
+              <div style={{
+                width: "36px", height: "36px", borderRadius: "10px",
+                background: s.bg, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                border: `1px solid ${s.color}25`,
+              }}>
+                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.color }} />
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: "26px", fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: "12px", color: "#64748B", marginTop: "4px" }}>{s.label}</div>
-            </div>
+            <div style={{ fontSize: "32px", fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1, marginBottom: "4px" }}>{s.value}</div>
+            <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "6px" }}>{s.label}</div>
+            <div style={{ fontSize: "11px", color: s.color, opacity: 0.7 }}>{s.delta}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
       <div style={{
-        display: "flex", gap: "2px", background: "rgba(255,255,255,0.04)",
-        borderRadius: "10px", padding: "4px", marginBottom: "20px", width: "fit-content",
+        display: "flex", gap: "4px", background: "rgba(255,255,255,0.04)",
+        borderRadius: "12px", padding: "5px", marginBottom: "20px", width: "fit-content",
       }}>
         {(["pending", "sent", "all"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
-              padding: "6px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+              padding: "7px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
               border: "none", cursor: "pointer", transition: "all 0.15s",
-              background: activeTab === tab ? "#0B1120" : "transparent",
-              color: activeTab === tab ? "#F1F5F9" : "#64748B",
-              boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.4)" : "none",
+              background: activeTab === tab ? "linear-gradient(135deg, #6366F1, #8B5CF6)" : "transparent",
+              color: activeTab === tab ? "#fff" : "#64748B",
+              boxShadow: activeTab === tab ? "0 2px 8px rgba(99,102,241,0.35)" : "none",
             }}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
             <span style={{
               marginLeft: "6px", padding: "1px 6px", borderRadius: "99px", fontSize: "11px",
-              background: activeTab === tab ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)",
-              color: activeTab === tab ? "#A5B4FC" : "#475569",
+              background: activeTab === tab ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)",
+              color: activeTab === tab ? "#fff" : "#475569",
             }}>
               {tab === "pending" ? pending.length : tab === "sent" ? sent.length : followUps.length}
             </span>

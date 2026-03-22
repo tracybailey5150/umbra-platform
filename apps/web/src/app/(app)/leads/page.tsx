@@ -305,26 +305,35 @@ export default function LeadsPage() {
       {/* Stat Strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px", marginBottom: "20px" }}>
         {[
-          { label: "Total Leads", value: loading ? "—" : leads.length, color: "#A5B4FC", bg: "rgba(99,102,241,0.1)" },
-          { label: "New Today",   value: loading ? "—" : newToday,     color: "#34D399", bg: "rgba(16,185,129,0.1)" },
-          { label: "Avg Score",   value: loading ? "—" : avgScore,     color: "#FCD34D", bg: "rgba(245,158,11,0.1)" },
+          { label: "Total Leads", value: loading ? "—" : leads.length, color: "#A5B4FC", glow: "rgba(99,102,241,0.18)",  bg: "rgba(99,102,241,0.1)",  delta: "all time" },
+          { label: "New Today",   value: loading ? "—" : newToday,     color: "#34D399", glow: "rgba(16,185,129,0.18)",  bg: "rgba(16,185,129,0.1)",  delta: "since midnight" },
+          { label: "Avg Score",   value: loading ? "—" : avgScore,     color: "#FCD34D", glow: "rgba(245,158,11,0.18)",  bg: "rgba(245,158,11,0.1)",  delta: "AI quality score" },
         ].map((s) => (
           <div key={s.label} style={{
-            background: "#0B1120", borderRadius: "14px", padding: "18px 20px",
-            border: "1px solid rgba(255,255,255,0.06)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-            display: "flex", alignItems: "center", gap: "14px",
+            background: "#0C1220", borderRadius: "14px", padding: "20px",
+            border: "1px solid rgba(255,255,255,0.07)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            position: "relative", overflow: "hidden",
           }}>
+            {/* Glow blob */}
             <div style={{
-              width: "40px", height: "40px", borderRadius: "10px",
-              background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.color }} />
+              position: "absolute", top: "-20px", right: "-20px",
+              width: "100px", height: "100px", borderRadius: "50%",
+              background: `radial-gradient(circle, ${s.glow} 0%, transparent 70%)`,
+              pointerEvents: "none",
+            }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
+              <div style={{
+                width: "36px", height: "36px", borderRadius: "10px",
+                background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                border: `1px solid ${s.color}25`,
+              }}>
+                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.color }} />
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: "26px", fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: "12px", color: "#64748B", marginTop: "4px" }}>{s.label}</div>
-            </div>
+            <div style={{ fontSize: "32px", fontWeight: 800, color: s.color, letterSpacing: "-0.03em", lineHeight: 1, marginBottom: "4px" }}>{s.value}</div>
+            <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "6px" }}>{s.label}</div>
+            <div style={{ fontSize: "11px", color: s.color, opacity: 0.7 }}>{s.delta}</div>
           </div>
         ))}
       </div>
@@ -338,17 +347,19 @@ export default function LeadsPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           {/* Search */}
           <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
-            <Search size={14} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#475569" }} />
+            <Search size={14} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#475569", pointerEvents: "none" }} />
             <input
               type="text"
               placeholder="Search leads by name, email, request…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onFocus={(e) => { e.currentTarget.style.border = "1px solid rgba(99,102,241,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+              onBlur={(e) => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.10)"; e.currentTarget.style.boxShadow = "none"; }}
               style={{
-                width: "100%", padding: "8px 12px 8px 32px", borderRadius: "8px",
-                background: "#070C18", border: "1px solid rgba(255,255,255,0.08)",
+                width: "100%", height: "40px", padding: "0 12px 0 36px", borderRadius: "8px",
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
                 color: "#F1F5F9", fontSize: "13px", outline: "none",
-                boxSizing: "border-box",
+                boxSizing: "border-box", transition: "border 0.15s, box-shadow 0.15s",
               }}
             />
           </div>

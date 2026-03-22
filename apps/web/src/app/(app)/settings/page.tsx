@@ -16,14 +16,14 @@ const PLAN = {
 };
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "9px 12px", borderRadius: "8px",
-  background: "#070C18", border: "1px solid rgba(255,255,255,0.08)",
+  width: "100%", height: "40px", padding: "0 12px", borderRadius: "8px",
+  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
   color: "#F1F5F9", fontSize: "13px", outline: "none",
-  boxSizing: "border-box",
+  boxSizing: "border-box", transition: "border 0.15s, box-shadow 0.15s",
 };
 
 const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: "10px", fontWeight: 700, color: "#1E3A5F",
+  display: "block", fontSize: "10px", fontWeight: 700, color: "#475569",
   textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px",
 };
 
@@ -53,8 +53,8 @@ export default function SettingsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Tab bar */}
           <div style={{
-            display: "flex", gap: "2px", background: "rgba(255,255,255,0.04)",
-            borderRadius: "10px", padding: "4px", width: "fit-content",
+            display: "flex", gap: "4px", background: "rgba(255,255,255,0.04)",
+            borderRadius: "12px", padding: "5px", width: "fit-content",
           }}>
             {SETTINGS_TABS.map(({ id, label, icon: Icon }) => (
               <button
@@ -64,9 +64,9 @@ export default function SettingsPage() {
                   display: "flex", alignItems: "center", gap: "6px",
                   padding: "7px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
                   border: "none", cursor: "pointer", transition: "all 0.15s",
-                  background: activeTab === id ? "#0B1120" : "transparent",
-                  color: activeTab === id ? "#F1F5F9" : "#64748B",
-                  boxShadow: activeTab === id ? "0 1px 4px rgba(0,0,0,0.4)" : "none",
+                  background: activeTab === id ? "linear-gradient(135deg, #6366F1, #8B5CF6)" : "transparent",
+                  color: activeTab === id ? "#fff" : "#64748B",
+                  boxShadow: activeTab === id ? "0 2px 8px rgba(99,102,241,0.35)" : "none",
                 }}
               >
                 <Icon size={13} />
@@ -78,8 +78,8 @@ export default function SettingsPage() {
           {/* Org tab */}
           {activeTab === "org" && (
             <div style={{
-              background: "#0B1120", borderRadius: "14px", padding: "22px",
-              border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              background: "#0C1220", borderRadius: "14px", padding: "22px",
+              border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
             }}>
               <h2 style={{ fontSize: "14px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 18px" }}>
                 Organization
@@ -87,19 +87,23 @@ export default function SettingsPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 <div>
                   <label style={labelStyle}>Organization name</label>
-                  <input type="text" defaultValue="Acme Services" style={inputStyle} />
+                  <input type="text" defaultValue="Acme Services" style={inputStyle}
+                    onFocus={(e) => { e.currentTarget.style.border = "1px solid rgba(99,102,241,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+                    onBlur={(e) => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.10)"; e.currentTarget.style.boxShadow = "none"; }}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Slug (used in URLs)</label>
                   <div style={{ display: "flex", alignItems: "center" }}>
                     <span style={{
-                      padding: "9px 12px",
+                      padding: "0 12px",
                       background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.10)",
                       borderRight: "none",
                       borderRadius: "8px 0 0 8px",
                       fontSize: "12px", color: "#475569",
                       whiteSpace: "nowrap",
+                      height: "40px", display: "flex", alignItems: "center",
                     }}>
                       umbra.ai/org/
                     </span>
@@ -150,8 +154,8 @@ export default function SettingsPage() {
           {/* Notifications tab */}
           {activeTab === "notifs" && (
             <div style={{
-              background: "#0B1120", borderRadius: "14px", padding: "22px",
-              border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              background: "#0C1220", borderRadius: "14px", padding: "22px",
+              border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
             }}>
               <h2 style={{ fontSize: "14px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 18px" }}>
                 Notifications
@@ -206,8 +210,8 @@ export default function SettingsPage() {
           {/* Security tab */}
           {activeTab === "security" && (
             <div style={{
-              background: "#0B1120", borderRadius: "14px", padding: "22px",
-              border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+              background: "#0C1220", borderRadius: "14px", padding: "22px",
+              border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
             }}>
               <h2 style={{ fontSize: "14px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 18px" }}>
                 Security
@@ -215,15 +219,24 @@ export default function SettingsPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 <div>
                   <label style={labelStyle}>Current password</label>
-                  <input type="password" placeholder="••••••••" style={inputStyle} />
+                  <input type="password" placeholder="••••••••" style={inputStyle}
+                    onFocus={(e) => { e.currentTarget.style.border = "1px solid rgba(99,102,241,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+                    onBlur={(e) => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.10)"; e.currentTarget.style.boxShadow = "none"; }}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>New password</label>
-                  <input type="password" placeholder="••••••••" style={inputStyle} />
+                  <input type="password" placeholder="••••••••" style={inputStyle}
+                    onFocus={(e) => { e.currentTarget.style.border = "1px solid rgba(99,102,241,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+                    onBlur={(e) => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.10)"; e.currentTarget.style.boxShadow = "none"; }}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Confirm new password</label>
-                  <input type="password" placeholder="••••••••" style={inputStyle} />
+                  <input type="password" placeholder="••••••••" style={inputStyle}
+                    onFocus={(e) => { e.currentTarget.style.border = "1px solid rgba(99,102,241,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+                    onBlur={(e) => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.10)"; e.currentTarget.style.boxShadow = "none"; }}
+                  />
                 </div>
                 <div style={{
                   padding: "14px", borderRadius: "10px",
@@ -264,10 +277,11 @@ export default function SettingsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Current plan */}
           <div style={{
-            background: "#0B1120", borderRadius: "14px", padding: "20px",
-            border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            background: "#0C1220", borderRadius: "14px", padding: "20px",
+            border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            borderTop: "2px solid #6366F1",
           }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "14px" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "14px" }}>
               Current Plan
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "10px" }}>
