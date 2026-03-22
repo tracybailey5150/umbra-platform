@@ -171,12 +171,12 @@ export default function AnalyticsPage() {
         setScoreDist(dist);
 
         // 4. Agent performance
-        const { data: agents } = await supabase
+        const { data: agentsRaw } = await supabase
           .from("agents")
           .select("id, name")
           .eq("organization_id", orgId);
 
-        const agentList = agents ?? [];
+        const agentList = (agentsRaw ?? []) as { id: string; name: string }[];
         const perfRows: AgentPerf[] = agentList.map((a) => {
           const agentSubs = allSubs.filter((s) => {
             // submissions don't have agent_id directly in this select — we need to refetch or skip
