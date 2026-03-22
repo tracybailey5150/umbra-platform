@@ -29,11 +29,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Look up internal user record by supabase_auth_id
+    const { data: userRecord } = await supabase
+      .from("users")
+      .select("id")
+      .eq("supabase_auth_id", user.id)
+      .maybeSingle();
+
+    const internalUserId = userRecord?.id;
+    if (!internalUserId) {
+      return NextResponse.json({ orgId: null, org: null }, { status: 200 });
+    }
+
     // Query memberships → organization_id
     const { data: membership, error: memberErr } = await supabase
       .from("memberships")
       .select("organization_id, role")
-      .eq("user_id", user.id)
+      .eq("user_id", internalUserId)
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
