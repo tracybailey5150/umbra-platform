@@ -40,7 +40,7 @@ export default function LandingPage() {
           }}>
             <span style={{ color: "#fff", fontSize: "16px", fontWeight: 700 }}>U</span>
           </div>
-          <span style={{ fontSize: "20px", fontWeight: 700, color: "#F1F5F9", letterSpacing: "-0.5px" }}>Umbra</span>
+          <span style={{ fontSize: "20px", fontWeight: 700, color: "#F1F5F9", letterSpacing: "-0.5px" }}>AgentPilot</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
           <a href="#features" style={{ fontSize: "14px", color: "#64748B", textDecoration: "none" }}>Features</a>
@@ -75,7 +75,7 @@ export default function LandingPage() {
           padding: "6px 14px", borderRadius: "99px", marginBottom: "32px",
         }}>
           <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#818CF8", display: "inline-block" }} />
-          AI Agent Platform — Now Live
+          AI-powered lead intake &amp; agent automation
         </div>
 
         <h1 style={{
@@ -140,7 +140,7 @@ export default function LandingPage() {
               ))}
             </div>
             <div style={{ flex: 1, maxWidth: "200px", margin: "0 auto", background: "rgba(255,255,255,0.04)", borderRadius: "6px", padding: "4px 12px", fontSize: "11px", color: "#334155", textAlign: "center" }}>
-              app.umbra.ai/dashboard
+              app.agentpilot.ai/dashboard
             </div>
           </div>
           <div style={{ padding: "24px" }}>
@@ -399,10 +399,10 @@ export default function LandingPage() {
             }}>
               <span style={{ color: "#fff", fontSize: "12px", fontWeight: 700 }}>U</span>
             </div>
-            <span style={{ color: "#F1F5F9", fontWeight: 600 }}>Umbra</span>
+            <span style={{ color: "#F1F5F9", fontWeight: 600 }}>AgentPilot</span>
           </div>
           <div style={{ fontSize: "13px", color: "#334155" }}>
-            © {new Date().getFullYear()} Umbra Platform. All rights reserved.
+            © {new Date().getFullYear()} AgentPilot. All rights reserved.
           </div>
         </div>
       </footer>

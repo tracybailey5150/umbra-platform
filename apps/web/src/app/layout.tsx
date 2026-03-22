@@ -23,14 +23,14 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Umbra — AI Agent Platform",
-    template: "%s | Umbra",
+    default: "AgentPilot — AI-powered lead intake & agent automation",
+    template: "%s | AgentPilot",
   },
-  description: "Intelligent quote, intake, and buyer agents that work until the job is done.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://umbra.ai"),
+  description: "AI-powered lead intake & agent automation. Capture, qualify, and follow up on every lead automatically.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://agentpilot.ai"),
   openGraph: {
     type: "website",
-    siteName: "Umbra",
+    siteName: "AgentPilot",
   },
 };
 

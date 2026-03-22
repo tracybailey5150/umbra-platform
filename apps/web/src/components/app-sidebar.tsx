@@ -52,7 +52,7 @@ export function AppSidebar() {
             <Zap size={16} color="#fff" strokeWidth={2.5} />
           </div>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.03em' }}>Umbra</div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.03em' }}>AgentPilot</div>
             <div style={{ fontSize: '10px', color: '#1E3A5F', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>AI Platform</div>
           </div>
         </Link>

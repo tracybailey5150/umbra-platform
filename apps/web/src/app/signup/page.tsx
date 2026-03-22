@@ -205,14 +205,14 @@ export default function SignupPage() {
               boxShadow: "0 0 20px rgba(59,130,246,0.4)",
               border: "1px solid rgba(59,130,246,0.3)",
             }}>
-              <span style={{ color: "#fff", fontSize: "15px", fontWeight: 700, letterSpacing: "-0.5px" }}>U</span>
+              <span style={{ color: "#fff", fontSize: "15px", fontWeight: 700, letterSpacing: "-0.5px" }}>A</span>
             </div>
             <span style={{
               color: "#F8FAFC",
               fontSize: "22px",
               fontWeight: 700,
               letterSpacing: "-0.5px",
-            }}>Umbra</span>
+            }}>AgentPilot</span>
           </div>
 
           {/* Card */}
