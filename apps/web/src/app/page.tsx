@@ -296,26 +296,26 @@ export default function LandingPage() {
           {[
             {
               name: "Basic",
-              price: "$9.99",
+              price: "$29",
               period: "/mo",
               desc: "Perfect for solo operators and small businesses just getting started.",
-              features: ["1 AI agent", "Up to 100 submissions/mo", "AI lead scoring", "Basic analytics", "Email notifications"],
+              features: ["1 AI agent", "Up to 100 submissions/mo", "AI scoring", "Basic analytics", "7-day free trial"],
               featured: false,
             },
             {
               name: "Pro",
-              price: "$29",
+              price: "$79",
               period: "/mo",
               desc: "For growing businesses that need multiple agents and advanced automation.",
-              features: ["Up to 5 AI agents", "Unlimited submissions", "AI follow-up automation", "Advanced analytics", "Priority support"],
+              features: ["Up to 5 AI agents", "Unlimited submissions", "AI follow-up automation", "Advanced analytics", "7-day free trial"],
               featured: true,
             },
             {
               name: "Team",
-              price: "$99",
+              price: "$199",
               period: "/mo",
               desc: "For agencies and multi-location businesses managing multiple brands.",
-              features: ["Unlimited agents", "Multi-user team access", "White-label ready", "Custom domain", "Dedicated onboarding"],
+              features: ["Unlimited agents", "Team members", "White-label", "Priority support", "7-day free trial"],
               featured: false,
             },
           ].map((p) => (

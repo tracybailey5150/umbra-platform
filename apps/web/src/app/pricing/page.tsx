@@ -73,8 +73,7 @@ export default function PricingPage() {
       <section className="text-center px-6 pt-16 pb-12 max-w-3xl mx-auto">
         <h1 className="font-display text-6xl text-slate-900 mb-4">Simple, honest pricing</h1>
         <p className="text-lg text-slate-500 leading-relaxed">
-          One-time setup includes full configuration and onboarding.
-          Monthly fee keeps your agents running.
+          No setup fee — start in 5 minutes. 7-day free trial on all plans.
         </p>
       </section>
 
@@ -271,7 +270,7 @@ export default function PricingPage() {
               },
               {
                 q: "Do you offer a trial?",
-                a: "Yes. We offer a 14-day trial after setup. Contact us to learn more.",
+                a: "Yes. Every plan includes a 7-day free trial. No credit card required to start.",
               },
               {
                 q: "What's white-label?",
