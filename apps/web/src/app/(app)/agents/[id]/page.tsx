@@ -824,15 +824,15 @@ export default function AgentConfigPage({ params }: { params: { id: string } }) 
               <div>
                 <label style={labelStyle}>Provider</label>
                 <select style={{ ...inputStyle, cursor: "pointer" }} defaultValue="openai">
-                  <option value="openai">OpenAI (GPT-4o)</option>
+                  <option value="openai">Bailey AI (Advanced)</option>
                   <option value="anthropic">Anthropic (Claude)</option>
                 </select>
               </div>
               <div>
                 <label style={labelStyle}>Model</label>
                 <select style={{ ...inputStyle, cursor: "pointer" }} defaultValue="gpt-4o">
-                  <option value="gpt-4o">GPT-4o</option>
-                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="gpt-4o">Bailey AI Standard</option>
+                  <option value="gpt-4o-mini">Bailey AI Mini</option>
                   <option value="claude-sonnet-4">Claude Sonnet 4</option>
                 </select>
               </div>
