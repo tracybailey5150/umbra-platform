@@ -162,6 +162,8 @@ export default function AgentConfigPage({ params }: { params: { id: string } }) 
 
   // Copy state
   const [copied, setCopied] = useState(false);
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
+  const [copiedDirectLink, setCopiedDirectLink] = useState(false);
 
   const supabase = getBrowserClient();
 
@@ -292,6 +294,24 @@ export default function AgentConfigPage({ params }: { params: { id: string } }) 
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function copyEmbedScript() {
+    if (!agent) return;
+    const script = `<script src="https://aiagentpilot.org/embed/${agent.slug}.js"></script>`;
+    navigator.clipboard.writeText(script).then(() => {
+      setCopiedEmbed(true);
+      setTimeout(() => setCopiedEmbed(false), 2000);
+    });
+  }
+
+  function copyDirectLink() {
+    if (!agent) return;
+    const link = `https://aiagentpilot.org/submit/${agent.slug}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedDirectLink(true);
+      setTimeout(() => setCopiedDirectLink(false), 2000);
     });
   }
 
@@ -511,6 +531,78 @@ export default function AgentConfigPage({ params }: { params: { id: string } }) 
                 </button>
               </div>
             </div>
+
+            {/* Embed Code */}
+            {agent && (
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#F1F5F9", margin: "0 0 8px" }}>Embed Code</h2>
+                <p style={{ fontSize: "12px", color: "#475569", margin: "0 0 14px", lineHeight: 1.5 }}>
+                  Paste this script tag anywhere on your website to embed your intake form.
+                </p>
+
+                {/* Script embed */}
+                <div style={{ marginBottom: "12px" }}>
+                  <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>
+                    Script Tag
+                  </label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <div style={{
+                      flex: 1, padding: "9px 12px", borderRadius: "8px",
+                      background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.07)",
+                      fontSize: "11px", color: "#818CF8", fontFamily: "monospace",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {`<script src="https://aiagentpilot.org/embed/${agent.slug}.js"></script>`}
+                    </div>
+                    <button
+                      onClick={copyEmbedScript}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "6px",
+                        padding: "8px 14px", borderRadius: "8px",
+                        background: copiedEmbed ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${copiedEmbed ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"}`,
+                        color: copiedEmbed ? "#34D399" : "#94A3B8",
+                        fontSize: "12px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                      }}
+                    >
+                      {copiedEmbed ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+                      {copiedEmbed ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Direct link */}
+                <div>
+                  <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>
+                    Direct Link
+                  </label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <div style={{
+                      flex: 1, padding: "9px 12px", borderRadius: "8px",
+                      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                      fontSize: "11px", color: "#94A3B8", fontFamily: "monospace",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {`https://aiagentpilot.org/submit/${agent.slug}`}
+                    </div>
+                    <button
+                      onClick={copyDirectLink}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "6px",
+                        padding: "8px 14px", borderRadius: "8px",
+                        background: copiedDirectLink ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${copiedDirectLink ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)"}`,
+                        color: copiedDirectLink ? "#34D399" : "#94A3B8",
+                        fontSize: "12px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                      }}
+                    >
+                      {copiedDirectLink ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+                      {copiedDirectLink ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right sidebar */}

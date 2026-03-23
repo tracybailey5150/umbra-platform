@@ -1,20 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { getBrowserClient } from "@umbra/auth";
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<"account" | "org">("account");
   const [error, setError] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string>("");
+  const [inviteApplied, setInviteApplied] = useState(false);
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", orgName: "", industry: "",
   });
+
+  // Auto-apply invite code from URL param
+  useEffect(() => {
+    const code = searchParams?.get("invite");
+    if (code) {
+      setInviteCode(code);
+      fetch(`/api/validate-invite?code=${encodeURIComponent(code)}`)
+        .then((res) => res.json())
+        .then((data) => { if (data?.valid) setInviteApplied(true); })
+        .catch(() => {});
+    }
+  }, [searchParams]);
 
   // Hover/focus states
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -296,6 +311,25 @@ export default function SignupPage() {
                 : "Tell us about your business."}
             </p>
 
+            {/* Invite code applied banner */}
+            {inviteApplied && (
+              <div style={{
+                marginBottom: "8px",
+                borderRadius: "10px",
+                background: "rgba(16,185,129,0.08)",
+                border: "1px solid rgba(16,185,129,0.25)",
+                padding: "10px 14px",
+                fontSize: "13px",
+                color: "#34D399",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontWeight: 600,
+              }}>
+                🎟️ Invite code applied — 30-day free trial activated
+              </div>
+            )}
+
             {error && (
               <div style={{
                 marginBottom: "16px",
@@ -375,6 +409,47 @@ export default function SignupPage() {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
+                  </div>
+                  {/* Invite code field */}
+                  <div>
+                    <label style={labelStyle}>Invite code (optional)</label>
+                    <input
+                      type="text"
+                      placeholder="Enter invite code"
+                      value={inviteCode}
+                      onChange={(e) => {
+                        setInviteCode(e.target.value);
+                        setInviteApplied(false);
+                        if (e.target.value.trim().length > 3) {
+                          fetch(`/api/validate-invite?code=${encodeURIComponent(e.target.value.trim())}`)
+                            .then((r) => r.json())
+                            .then((d) => { if (d?.valid) setInviteApplied(true); })
+                            .catch(() => {});
+                        }
+                      }}
+                      onFocus={() => setFocusedField("inviteCode")}
+                      onBlur={() => setFocusedField(null)}
+                      style={{
+                        width: "100%",
+                        height: "42px",
+                        padding: "0 12px",
+                        borderRadius: "8px",
+                        background: "rgba(255,255,255,0.04)",
+                        border: `1px solid ${inviteApplied ? "rgba(16,185,129,0.4)" : focusedField === "inviteCode" ? "rgba(99,102,241,0.5)" : "rgba(255,255,255,0.10)"}`,
+                        color: "#F1F5F9",
+                        fontSize: "13px",
+                        outline: "none",
+                        boxSizing: "border-box",
+                        fontFamily: "monospace",
+                        boxShadow: inviteApplied ? "0 0 0 3px rgba(16,185,129,0.08)" : focusedField === "inviteCode" ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+                        transition: "border 0.15s, box-shadow 0.15s",
+                      }}
+                    />
+                    {inviteApplied && (
+                      <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#34D399" }}>
+                        ✓ Valid invite — 30-day free trial will be applied
+                      </p>
+                    )}
                   </div>
                 </>
               ) : (
