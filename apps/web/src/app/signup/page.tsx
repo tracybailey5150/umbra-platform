@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { getBrowserClient } from "@umbra/auth";
 
-export default function SignupPage() {
+function SignupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
@@ -563,5 +564,13 @@ export default function SignupPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#080C14" }} />}>
+      <SignupPageInner />
+    </Suspense>
   );
 }
