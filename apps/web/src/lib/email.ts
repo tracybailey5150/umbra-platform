@@ -1,6 +1,5 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const NOTIFY = 'tracybailey5150@icloud.com'
 
 function from(appName: string) {
@@ -9,7 +8,7 @@ function from(appName: string) {
 
 export async function notifyNewSignup(appName: string, email: string, name?: string) {
   try {
-    await resend.emails.send({
+    await new Resend(process.env.RESEND_API_KEY).emails.send({
       from: from(appName),
       to: NOTIFY,
       subject: `[${appName}] New signup — ${email}`,
@@ -29,7 +28,7 @@ export async function notifyNewSignup(appName: string, email: string, name?: str
 
 export async function notifyNewSubscription(appName: string, email: string, plan: string, amount: string) {
   try {
-    await resend.emails.send({
+    await new Resend(process.env.RESEND_API_KEY).emails.send({
       from: from(appName),
       to: NOTIFY,
       subject: `[${appName}] New subscription — ${plan} — ${email}`,
@@ -50,7 +49,7 @@ export async function notifyNewSubscription(appName: string, email: string, plan
 
 export async function notifyContactForm(appName: string, senderEmail: string, senderName: string, message: string) {
   try {
-    await resend.emails.send({
+    await new Resend(process.env.RESEND_API_KEY).emails.send({
       from: from(appName),
       to: NOTIFY,
       replyTo: senderEmail,
@@ -72,7 +71,7 @@ export async function notifyContactForm(appName: string, senderEmail: string, se
 
 export async function notifyNewLead(appName: string, email: string, details?: string) {
   try {
-    await resend.emails.send({
+    await new Resend(process.env.RESEND_API_KEY).emails.send({
       from: from(appName),
       to: NOTIFY,
       subject: `[${appName}] New lead — ${email}`,
