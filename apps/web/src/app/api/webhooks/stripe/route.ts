@@ -199,6 +199,7 @@ interface StripeCheckoutSession {
   id: string;
   subscription?: string;
   customer?: string;
+  customer_email?: string;
   metadata?: Record<string, string>;
 }
 interface StripeSubscription {
