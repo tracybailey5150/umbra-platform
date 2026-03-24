@@ -1,3 +1,4 @@
+import { sendWelcomeEmail } from "@/lib/email"
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -122,6 +123,9 @@ export async function POST(req: NextRequest) {
       console.error("Membership insert error:", memberErr);
       // Don't fail — org was created
     }
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user.email ?? "", fullName ?? "").catch(() => {})
 
     return NextResponse.json({ success: true, orgId: org.id });
 

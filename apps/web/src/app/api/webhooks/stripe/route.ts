@@ -1,3 +1,4 @@
+import { sendSubscriptionConfirmationEmail } from "@/lib/email"
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
@@ -97,8 +98,13 @@ async function handleCheckoutCompleted(session: StripeCheckoutSession) {
     { onConflict: "stripe_subscription_id" }
   );
 
-  if (error) console.error("[Stripe] Supabase upsert error:", error);
-  else console.log(`[Stripe] Subscription active for user=${userId}`);
+  if (error) {
+    console.error("[Stripe] Supabase upsert error:", error)
+  } else {
+    console.log(`[Stripe] Subscription active for user=${userId}`)
+    const email = session.customer_email ?? (session as any).customer_details?.email ?? ""
+    if (email) sendSubscriptionConfirmationEmail(email, planTier).catch(() => {})
+  }
 }
 
 async function handleSubscriptionUpdated(sub: StripeSubscription) {
