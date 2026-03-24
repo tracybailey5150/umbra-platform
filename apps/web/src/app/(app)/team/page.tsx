@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, Mail, MoreHorizontal, Shield, User, UserCheck, Clock } from "lucide-react";
+import { Plus, Mail, Shield, User, UserCheck, Clock, Trash2 } from "lucide-react";
 import { getBrowserClient } from "@umbra/auth";
 
 interface Member {
@@ -35,6 +35,8 @@ export default function TeamPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("team_member");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = getBrowserClient();
@@ -69,6 +71,15 @@ export default function TeamPage() {
       setLoading(false);
     });
   }, []);
+
+  async function deleteMember(membershipId: string) {
+    setDeletingId(membershipId);
+    const supabase = getBrowserClient();
+    const { error } = await supabase.from('memberships').delete().eq('id', membershipId);
+    if (!error) setMembers(prev => prev.filter(m => m.id !== membershipId));
+    setDeletingId(null);
+    setConfirmDeleteId(null);
+  }
 
   const filtered = members.filter(m => roleFilter === "all" || m.role === roleFilter);
 
@@ -251,16 +262,46 @@ export default function TeamPage() {
                   {m.lastSeen}
                 </div>
 
-                <button style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  color: "#475569", display: "flex", alignItems: "center", padding: "4px",
-                  borderRadius: "6px",
-                }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#94A3B8"; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#475569"; }}
-                >
-                  <MoreHorizontal size={16} />
-                </button>
+                {confirmDeleteId === m.id ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <button
+                      onClick={() => deleteMember(m.id)}
+                      disabled={deletingId === m.id}
+                      style={{
+                        padding: "5px 12px", borderRadius: "7px", fontSize: "11px", fontWeight: 600,
+                        background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
+                        color: "#EF4444", cursor: deletingId === m.id ? "not-allowed" : "pointer",
+                        opacity: deletingId === m.id ? 0.6 : 1,
+                      }}
+                    >
+                      {deletingId === m.id ? "…" : "Remove"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      style={{
+                        padding: "5px 10px", borderRadius: "7px", fontSize: "11px", fontWeight: 600,
+                        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                        color: "#94A3B8", cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteId(m.id)}
+                    title="Remove member"
+                    style={{
+                      background: "none", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer",
+                      color: "#475569", display: "flex", alignItems: "center", padding: "6px 8px",
+                      borderRadius: "7px", transition: "all 0.15s",
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.color = "#EF4444"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#475569"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             );
           })}
