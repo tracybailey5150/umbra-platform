@@ -53,7 +53,7 @@ export async function notifyContactForm(appName: string, senderEmail: string, se
     await resend.emails.send({
       from: from(appName),
       to: NOTIFY,
-      reply_to: senderEmail,
+      replyTo: senderEmail,
       subject: `[${appName}] Contact form — ${senderName}`,
       html: `
         <div style="font-family:sans-serif;padding:24px;max-width:560px">
