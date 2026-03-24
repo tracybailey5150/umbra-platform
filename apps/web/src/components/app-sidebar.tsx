@@ -15,8 +15,8 @@ const NAV_SECTIONS = [
     label: "Operations",
     items: [
       { href: "/dashboard",   label: "Overview",       icon: LayoutDashboard, badge: null },
-      { href: "/leads",       label: "Leads",          icon: Inbox,           badge: 24   },
-      { href: "/follow-ups",  label: "Follow-Ups",     icon: GitPullRequest,  badge: 3    },
+      { href: "/leads",       label: "Leads",          icon: Inbox,           badge: null   },
+      { href: "/follow-ups",  label: "Follow-Ups",     icon: GitPullRequest,  badge: null   },
       { href: "/analytics",   label: "Analytics",      icon: BarChart3,       badge: null },
     ],
   },
