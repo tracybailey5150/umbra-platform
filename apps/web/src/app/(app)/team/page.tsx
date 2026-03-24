@@ -1,14 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Mail, MoreHorizontal, Shield, User, UserCheck, Clock } from "lucide-react";
+import { getBrowserClient } from "@umbra/auth";
 
-const MEMBERS = [
-  { id: "u1", name: "John Doe (You)", email: "john@acme.com", role: "org_owner", status: "active", lastSeen: "Now", avatar: "JD" },
-  { id: "u2", name: "Sarah Martinez", email: "sarah@acme.com", role: "team_member", status: "active", lastSeen: "2h ago", avatar: "SM" },
-  { id: "u3", name: "Tom Blake", email: "tom@acme.com", role: "team_member", status: "active", lastSeen: "1d ago", avatar: "TB" },
-  { id: "u4", name: "Lisa Park", email: "lisa@acme.com", role: "org_admin", status: "active", lastSeen: "3d ago", avatar: "LP" },
-  { id: "u5", name: "pending invite", email: "alex@partner.com", role: "team_member", status: "invited", lastSeen: "—", avatar: "?" },
-];
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  lastSeen: string;
+  avatar: string;
+}
 
 const ROLE_CONFIG: Record<string, { label: string; icon: typeof User; color: string; bg: string }> = {
   org_owner:   { label: "Owner",  icon: Shield,    color: "#A78BFA", bg: "rgba(139,92,246,0.12)" },
@@ -26,12 +29,48 @@ const ROLE_TABS = [
 ];
 
 export default function TeamPage() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("team_member");
   const [roleFilter, setRoleFilter] = useState("all");
 
-  const filtered = MEMBERS.filter(m => roleFilter === "all" || m.role === roleFilter);
+  useEffect(() => {
+    const supabase = getBrowserClient();
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.access_token) { setLoading(false); return; }
+      try {
+        const res = await fetch('/api/org', { headers: { Authorization: `Bearer ${session.access_token}` } });
+        const { org } = await res.json();
+        if (!org?.id) { setLoading(false); return; }
+
+        const { data } = await supabase
+          .from('memberships')
+          .select('id, role, user_id, users(email, name)')
+          .eq('organization_id', org.id);
+
+        const mapped: Member[] = (data ?? []).map((m: any) => {
+          const email = m.users?.email ?? '';
+          const name = m.users?.name ?? email.split('@')[0] ?? 'Unknown';
+          const initials = name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2);
+          return {
+            id: m.id,
+            name,
+            email,
+            role: m.role ?? 'team_member',
+            status: 'active',
+            lastSeen: '—',
+            avatar: initials || '?',
+          };
+        });
+        setMembers(mapped);
+      } catch {}
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = members.filter(m => roleFilter === "all" || m.role === roleFilter);
 
   return (
     <div style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
@@ -42,7 +81,7 @@ export default function TeamPage() {
             Team Members
           </h1>
           <p style={{ fontSize: "13px", color: "#64748B", marginTop: "4px", margin: "4px 0 0" }}>
-            {MEMBERS.length} members on your workspace
+            {loading ? "Loading…" : `${members.length} member${members.length !== 1 ? "s" : ""} on your workspace`}
           </p>
         </div>
         <button
@@ -129,7 +168,7 @@ export default function TeamPage() {
         borderRadius: "12px", padding: "5px", marginBottom: "20px", width: "fit-content",
       }}>
         {ROLE_TABS.map((tab) => {
-          const count = tab.value === "all" ? MEMBERS.length : MEMBERS.filter(m => m.role === tab.value).length;
+          const count = tab.value === "all" ? members.length : members.filter(m => m.role === tab.value).length;
           return (
             <button
               key={tab.value}
@@ -155,90 +194,78 @@ export default function TeamPage() {
         })}
       </div>
 
-      {/* Members as cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {filtered.map((m, idx) => {
-          const cfg = ROLE_CONFIG[m.role] ?? ROLE_CONFIG.team_member;
-          const RoleIcon = cfg.icon;
-          const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+      {/* Members list */}
+      {loading ? (
+        <div style={{ color: "#475569", fontSize: "14px", padding: "40px 0", textAlign: "center" }}>Loading members…</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ color: "#475569", fontSize: "14px", padding: "40px 0", textAlign: "center" }}>No members yet.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {filtered.map((m, idx) => {
+            const cfg = ROLE_CONFIG[m.role] ?? ROLE_CONFIG.team_member;
+            const RoleIcon = cfg.icon;
+            const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
 
-          return (
-            <div
-              key={m.id}
-              style={{
-                background: "#0C1220", borderRadius: "14px", padding: "16px 20px",
-                border: "1px solid rgba(255,255,255,0.07)",
-                boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-                display: "flex", alignItems: "center", gap: "14px",
-                transition: "background 0.15s, box-shadow 0.15s",
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.background = "rgba(14,20,38,0.9)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.4)"; }}
-              onMouseOut={(e) => { e.currentTarget.style.background = "#0C1220"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.3)"; }}
-            >
-              {/* Avatar */}
-              <div style={{
-                width: "42px", height: "42px", borderRadius: "50%", flexShrink: 0,
-                background: m.status === "invited"
-                  ? "rgba(255,255,255,0.04)"
-                  : `linear-gradient(135deg, ${avatarColor}30, ${avatarColor}10)`,
-                border: `1.5px solid ${m.status === "invited" ? "rgba(255,255,255,0.08)" : `${avatarColor}50`}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "13px", fontWeight: 700,
-                color: m.status === "invited" ? "#475569" : avatarColor,
-                boxShadow: m.status === "invited" ? "none" : `0 0 12px ${avatarColor}20`,
-              }}>
-                {m.avatar}
-              </div>
-
-              {/* Name + email */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#F1F5F9" }}>{m.name}</span>
-                  {m.status === "invited" && (
-                    <span style={{
-                      fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "99px",
-                      background: "rgba(245,158,11,0.12)", color: "#FCD34D",
-                    }}>
-                      Pending
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>{m.email}</div>
-              </div>
-
-              {/* Role badge */}
-              <div>
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: "4px",
-                  fontSize: "11px", fontWeight: 600, padding: "4px 10px", borderRadius: "99px",
-                  background: cfg.bg, color: cfg.color,
-                }}>
-                  <RoleIcon size={11} />
-                  {cfg.label}
-                </span>
-              </div>
-
-              {/* Last seen */}
-              <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#475569", fontSize: "12px", minWidth: "70px" }}>
-                <Clock size={11} />
-                {m.lastSeen}
-              </div>
-
-              {/* Actions menu */}
-              <button style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "#475569", display: "flex", alignItems: "center", padding: "4px",
-                borderRadius: "6px",
-              }}
-                onMouseOver={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#94A3B8"; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#475569"; }}
+            return (
+              <div
+                key={m.id}
+                style={{
+                  background: "#0C1220", borderRadius: "14px", padding: "16px 20px",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+                  display: "flex", alignItems: "center", gap: "14px",
+                  transition: "background 0.15s, box-shadow 0.15s",
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.background = "rgba(14,20,38,0.9)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.4)"; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = "#0C1220"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.3)"; }}
               >
-                <MoreHorizontal size={16} />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+                <div style={{
+                  width: "42px", height: "42px", borderRadius: "50%", flexShrink: 0,
+                  background: `linear-gradient(135deg, ${avatarColor}30, ${avatarColor}10)`,
+                  border: `1.5px solid ${avatarColor}50`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "13px", fontWeight: 700, color: avatarColor,
+                  boxShadow: `0 0 12px ${avatarColor}20`,
+                }}>
+                  {m.avatar}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "14px", fontWeight: 600, color: "#F1F5F9" }}>{m.name}</div>
+                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>{m.email}</div>
+                </div>
+
+                <div>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: "4px",
+                    fontSize: "11px", fontWeight: 600, padding: "4px 10px", borderRadius: "99px",
+                    background: cfg.bg, color: cfg.color,
+                  }}>
+                    <RoleIcon size={11} />
+                    {cfg.label}
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#475569", fontSize: "12px", minWidth: "70px" }}>
+                  <Clock size={11} />
+                  {m.lastSeen}
+                </div>
+
+                <button style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#475569", display: "flex", alignItems: "center", padding: "4px",
+                  borderRadius: "6px",
+                }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#94A3B8"; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#475569"; }}
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
