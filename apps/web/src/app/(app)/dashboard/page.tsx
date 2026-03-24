@@ -137,6 +137,10 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+interface FollowUp {
+  name: string; email: string; daysAgo: number; status: string; urgency: string;
+}
+
 export default function DashboardPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
