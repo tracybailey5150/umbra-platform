@@ -7,11 +7,10 @@ function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_placeholder");
 }
 
-// Stripe price IDs (test mode)
+// Stripe price IDs (live mode)
 const PRICE_IDS: Record<string, string> = {
-  "price_1TDGbjQgTSmbZJKxZyKJe5Va": "Basic $9.99",
-  "price_1TDGbkQgTSmbZJKx8kElMmUl": "Pro $29",
-  "price_1TDGblQgTSmbZJKxNgWawFku": "Team $99",
+    "price_1TEILnHW6WsrXJBUSHHgb3Tk": "Basic $29/mo",
+  "price_1TEILoHW6WsrXJBUpJRBIh2l": "Pro $79/mo",
 };
 
 export async function POST(request: NextRequest) {

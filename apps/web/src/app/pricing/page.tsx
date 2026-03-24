@@ -3,11 +3,11 @@ import { Check, Minus, ArrowRight } from "lucide-react";
 import { PLANS, PUBLIC_PLANS } from "@umbra/billing";
 import { CheckoutButton } from "./CheckoutButton";
 
-// Map plan slugs to Stripe test price IDs
+// Map plan slugs to Stripe live price IDs
 const PLAN_PRICE_IDS: Record<string, string> = {
-  quote_agent_starter: "price_1TDGbjQgTSmbZJKxZyKJe5Va",
-  quote_agent_pro: "price_1TDGbkQgTSmbZJKx8kElMmUl",
-  persistent_buyer_agent: "price_1TDGblQgTSmbZJKxNgWawFku",
+  quote_agent_starter: "price_1TEILnHW6WsrXJBUSHHgb3Tk",
+  quote_agent_pro: "price_1TEILoHW6WsrXJBUpJRBIh2l",
+  persistent_buyer_agent: "",
   white_label_install: "",
 };
 

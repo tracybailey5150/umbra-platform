@@ -1,111 +1,95 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { err } from "@umbra/shared";
+import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 /**
  * POST /api/webhooks/stripe
  *
- * Handles Stripe webhook events for subscription lifecycle management.
- *
  * Events handled:
- *   checkout.session.completed     → activate subscription, mark setup fee paid
- *   customer.subscription.updated  → update subscription status/period
- *   customer.subscription.deleted  → cancel subscription
- *   invoice.payment_succeeded      → record successful payment
- *   invoice.payment_failed         → mark subscription as past_due
+ *   checkout.session.completed     → activate subscription in Supabase
+ *   customer.subscription.updated  → sync status/period
+ *   customer.subscription.deleted  → cancel subscription, revoke access
+ *   invoice.payment_succeeded      → log payment
+ *   invoice.payment_failed         → mark past_due
  */
 export async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
     console.error("[Stripe Webhook] STRIPE_WEBHOOK_SECRET not set");
-    return NextResponse.json(err("Webhook secret not configured"), { status: 500 });
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
-  const payload   = await request.text();
+  const payload = await request.text();
   const signature = request.headers.get("stripe-signature");
 
   if (!signature) {
-    return NextResponse.json(err("Missing stripe-signature header"), { status: 400 });
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
   }
 
-  // Verify webhook signature
   let event: StripeEvent;
   try {
     event = verifyStripeWebhook(payload, signature, webhookSecret);
-  } catch (verifyError) {
-    console.error("[Stripe Webhook] Signature verification failed:", verifyError);
-    return NextResponse.json(err("Invalid signature"), { status: 400 });
+  } catch (err) {
+    console.error("[Stripe Webhook] Signature verification failed:", err);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  console.log(`[Stripe Webhook] Received event: ${event.type} (${event.id})`);
+  console.log(`[Stripe Webhook] ${event.type} (${event.id})`);
 
   try {
     switch (event.type) {
       case "checkout.session.completed":
         await handleCheckoutCompleted(event.data.object as StripeCheckoutSession);
         break;
-
       case "customer.subscription.updated":
         await handleSubscriptionUpdated(event.data.object as StripeSubscription);
         break;
-
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event.data.object as StripeSubscription);
         break;
-
       case "invoice.payment_succeeded":
         await handleInvoicePaymentSucceeded(event.data.object as StripeInvoice);
         break;
-
       case "invoice.payment_failed":
         await handleInvoicePaymentFailed(event.data.object as StripeInvoice);
         break;
-
       default:
-        console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
+        console.log(`[Stripe Webhook] Unhandled event: ${event.type}`);
     }
-
     return NextResponse.json({ received: true });
-  } catch (handlerError) {
-    console.error(`[Stripe Webhook] Handler failed for ${event.type}:`, handlerError);
-    // Return 200 to prevent Stripe from retrying for non-retriable errors
+  } catch (err) {
+    console.error(`[Stripe Webhook] Handler error for ${event.type}:`, err);
     return NextResponse.json({ received: true, error: "Handler error logged" });
   }
 }
 
-// ─── EVENT HANDLERS ───────────────────────────────────────────────────────────
+// ─── HANDLERS ─────────────────────────────────────────────────────────────────
+
+const PLAN_TIER_MAP: Record<string, string> = {
+  "price_1TEILnHW6WsrXJBUSHHgb3Tk": "basic",
+  "price_1TEILoHW6WsrXJBUpJRBIh2l": "pro",
+};
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(url, key);
+}
 
 async function handleCheckoutCompleted(session: StripeCheckoutSession) {
-  const { metadata } = session;
-  const userId = metadata?.userId;
-  const priceId = metadata?.priceId;
+  const userId = session.metadata?.userId;
+  const priceId = session.metadata?.priceId;
+  const planTier = priceId ? (PLAN_TIER_MAP[priceId] ?? "basic") : "basic";
 
-  console.log(`[Stripe] Checkout completed for user: ${userId}, price: ${priceId}`);
+  console.log(`[Stripe] Checkout completed user=${userId} plan=${planTier}`);
 
-  // Map price IDs to plan tiers
-  const planTierMap: Record<string, string> = {
-    "price_1TDGbjQgTSmbZJKxZyKJe5Va": "basic",
-    "price_1TDGbkQgTSmbZJKx8kElMmUl": "pro",
-    "price_1TDGblQgTSmbZJKxNgWawFku": "team",
-  };
-  const planTier = priceId ? planTierMap[priceId] || "basic" : "basic";
-
-  // Upsert into subscriptions table
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    console.error("[Stripe] Supabase env vars not set");
-    return;
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
+  const supabase = getSupabase();
   const { error } = await supabase.from("subscriptions").upsert(
     {
-      user_id: userId || null,
-      stripe_customer_id: session.customer || null,
-      stripe_subscription_id: session.subscription || null,
+      user_id: userId ?? null,
+      stripe_customer_id: session.customer ?? null,
+      stripe_subscription_id: session.subscription ?? null,
       plan_tier: planTier,
       status: "active",
       updated_at: new Date().toISOString(),
@@ -113,93 +97,104 @@ async function handleCheckoutCompleted(session: StripeCheckoutSession) {
     { onConflict: "stripe_subscription_id" }
   );
 
-  if (error) {
-    console.error("[Stripe] Failed to upsert subscription:", error);
-  } else {
-    console.log(`[Stripe] Subscription upserted for user: ${userId}, plan: ${planTier}`);
-  }
+  if (error) console.error("[Stripe] Supabase upsert error:", error);
+  else console.log(`[Stripe] Subscription active for user=${userId}`);
 }
 
-async function handleSubscriptionUpdated(subscription: StripeSubscription) {
-  // TODO: Sync subscription status to DB
-  // const db = getDb();
-  // await db.update(schema.subscriptions)
-  //   .set({
-  //     status: subscription.status as any,
-  //     stripeCurrentPeriodStart: new Date(subscription.current_period_start * 1000),
-  //     stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-  //     stripeCancelAtPeriodEnd: subscription.cancel_at_period_end,
-  //     updatedAt: new Date(),
-  //   })
-  //   .where(eq(schema.subscriptions.stripeSubscriptionId, subscription.id));
+async function handleSubscriptionUpdated(sub: StripeSubscription) {
+  console.log(`[Stripe] Subscription updated: ${sub.id} → ${sub.status}`);
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: sub.status,
+      current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+      cancel_at_period_end: sub.cancel_at_period_end,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", sub.id);
 
-  console.log(`[Stripe] Subscription updated: ${subscription.id} → ${subscription.status}`);
+  if (error) console.error("[Stripe] Subscription update error:", error);
 }
 
-async function handleSubscriptionDeleted(subscription: StripeSubscription) {
-  // TODO: Mark as canceled, restrict access
-  // await db.update(schema.subscriptions)
-  //   .set({ status: "canceled", canceledAt: new Date(), updatedAt: new Date() })
-  //   .where(eq(schema.subscriptions.stripeSubscriptionId, subscription.id));
+async function handleSubscriptionDeleted(sub: StripeSubscription) {
+  console.log(`[Stripe] Subscription canceled: ${sub.id}`);
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: "canceled",
+      canceled_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", sub.id);
 
-  console.log(`[Stripe] Subscription canceled: ${subscription.id}`);
+  if (error) console.error("[Stripe] Subscription cancel error:", error);
 }
 
 async function handleInvoicePaymentSucceeded(invoice: StripeInvoice) {
-  // TODO: Log payment, reset past_due status if applicable
-  console.log(`[Stripe] Invoice paid: ${invoice.id} for ${invoice.customer}`);
+  console.log(`[Stripe] Invoice paid: ${invoice.id}`);
+  if (!invoice.subscription) return;
+  const supabase = getSupabase();
+  await supabase
+    .from("subscriptions")
+    .update({ status: "active", updated_at: new Date().toISOString() })
+    .eq("stripe_subscription_id", invoice.subscription);
 }
 
 async function handleInvoicePaymentFailed(invoice: StripeInvoice) {
-  // TODO: Mark subscription as past_due, notify org owner
-  // TODO: Send dunning email
-  console.log(`[Stripe] Invoice payment failed: ${invoice.id} for ${invoice.customer}`);
+  console.log(`[Stripe] Invoice payment failed: ${invoice.id}`);
+  if (!invoice.subscription) return;
+  const supabase = getSupabase();
+  await supabase
+    .from("subscriptions")
+    .update({ status: "past_due", updated_at: new Date().toISOString() })
+    .eq("stripe_subscription_id", invoice.subscription);
 }
 
-// ─── STRIPE SIGNATURE VERIFICATION ───────────────────────────────────────────
+// ─── SIGNATURE VERIFICATION ───────────────────────────────────────────────────
 
-/**
- * verifyStripeWebhook — lightweight signature verification without the full SDK.
- * In production, consider using the official Stripe SDK: stripe.webhooks.constructEvent()
- */
-function verifyStripeWebhook(
-  payload: string,
-  signature: string,
-  secret: string
-): StripeEvent {
-  // TODO: Implement HMAC-SHA256 verification
-  // const crypto = require("crypto");
-  // const parts = signature.split(",").reduce((acc, part) => {
-  //   const [key, val] = part.split("=");
-  //   acc[key] = val;
-  //   return acc;
-  // }, {} as Record<string, string>);
-  //
-  // const signedPayload = `${parts.t}.${payload}`;
-  // const expected = crypto.createHmac("sha256", secret).update(signedPayload).digest("hex");
-  // if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1))) {
-  //   throw new Error("Webhook signature mismatch");
-  // }
+function verifyStripeWebhook(payload: string, signature: string, secret: string): StripeEvent {
+  const parts = signature.split(",").reduce<Record<string, string>>((acc, part) => {
+    const [k, v] = part.split("=");
+    acc[k] = v;
+    return acc;
+  }, {});
 
-  // For now, parse and return — add verification above before going live
+  const timestamp = parts["t"];
+  const v1 = parts["v1"];
+
+  if (!timestamp || !v1) throw new Error("Malformed stripe-signature header");
+
+  const signed = `${timestamp}.${payload}`;
+  const expected = crypto.createHmac("sha256", secret).update(signed, "utf8").digest("hex");
+
+  if (!crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(v1, "hex"))) {
+    throw new Error("Webhook signature mismatch");
+  }
+
+  // Reject events older than 5 minutes
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) {
+    throw new Error("Webhook timestamp too old");
+  }
+
   return JSON.parse(payload) as StripeEvent;
 }
 
-// ─── MINIMAL STRIPE TYPES ─────────────────────────────────────────────────────
+// ─── TYPES ────────────────────────────────────────────────────────────────────
 
 interface StripeEvent {
   id: string;
   type: string;
   data: { object: unknown };
 }
-
 interface StripeCheckoutSession {
   id: string;
   subscription?: string;
   customer?: string;
   metadata?: Record<string, string>;
 }
-
 interface StripeSubscription {
   id: string;
   status: string;
@@ -208,7 +203,6 @@ interface StripeSubscription {
   current_period_end: number;
   cancel_at_period_end: boolean;
 }
-
 interface StripeInvoice {
   id: string;
   customer: string;
