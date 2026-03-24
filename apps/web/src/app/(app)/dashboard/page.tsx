@@ -478,7 +478,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize: '11px', color: '#334155', marginBottom: '6px' }}>{fu.status}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#6366F1' }}>
                   <Zap size={10} />
-                  {fu.note}
+                  {fu.email}
                 </div>
               </div>
             ))}
