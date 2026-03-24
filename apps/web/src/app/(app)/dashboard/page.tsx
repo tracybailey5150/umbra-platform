@@ -141,6 +141,8 @@ export default function DashboardPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [weekStats, setWeekStats] = useState({ submissions: 0, quotes: 0, won: 0 });
   const [liveStats, setLiveStats] = useState<LiveStats>({
     newSubmissions: 0,
     quoteReady: 0,
@@ -238,6 +240,38 @@ export default function DashboardPage() {
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(5);
+
+      // Follow-ups: new submissions older than 2 days
+      const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString()
+      const { data: staleData } = await supabase
+        .from(submissions)
+        .select(submitter_name, submitter_email, created_at, status)
+        .eq(organization_id, orgId!)
+        .in(status, [new, reviewing])
+        .lt(created_at, twoDaysAgo)
+        .order(created_at, { ascending: true })
+        .limit(5)
+
+      setFollowUps((staleData ?? []).map((s: any) => {
+        const daysAgo = Math.floor((Date.now() - new Date(s.created_at).getTime()) / 86400000)
+        return {
+          name: s.submitter_name ?? Unknown,
+          email: s.submitter_email ?? ,
+          daysAgo,
+          status: s.status === reviewing ? In review : No response,
+          urgency: daysAgo >= 4 ? high : medium,
+        }
+      }))
+
+      // This week counts
+      const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0,0,0,0)
+      const weekStartISO = weekStart.toISOString()
+      const [{ count: wSubs }, { count: wQuotes }, { count: wWon }] = await Promise.all([
+        supabase.from(submissions).select(id, { count: exact, head: true }).eq(organization_id, orgId!).gte(created_at, weekStartISO),
+        supabase.from(submissions).select(id, { count: exact, head: true }).eq(organization_id, orgId!).eq(status, quoted).gte(updated_at, weekStartISO),
+        supabase.from(submissions).select(id, { count: exact, head: true }).eq(organization_id, orgId!).eq(status, accepted).gte(updated_at, weekStartISO),
+      ])
+      setWeekStats({ submissions: wSubs ?? 0, quotes: wQuotes ?? 0, won: wWon ?? 0 })
 
       setRecentSubmissions(recentData ?? []);
       setLiveStats({
@@ -415,13 +449,18 @@ export default function DashboardPage() {
                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#F1F5F9' }}>Follow-ups Due</span>
               </div>
               <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px', background: 'rgba(245,158,11,0.12)', color: '#FCD34D' }}>
-                {FOLLOW_UPS_MOCK.length}
+                {followUps.length}
               </span>
             </div>
-            {FOLLOW_UPS_MOCK.map((fu, i) => (
-              <div key={fu.name} style={{
+            {followUps.length === 0 && (
+              <div style={{ padding: '20px 18px', textAlign: 'center', fontSize: '12px', color: '#334155' }}>
+                No pending follow-ups
+              </div>
+            )}
+            {followUps.map((fu, i) => (
+              <div key={i} style={{
                 padding: '13px 18px',
-                borderBottom: i < FOLLOW_UPS_MOCK.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                borderBottom: i < followUps.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: '#CBD5E1' }}>{fu.name}</span>
@@ -456,7 +495,12 @@ export default function DashboardPage() {
           <div style={{ background: '#0C1220', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.07)', padding: '18px' }}>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#F1F5F9', marginBottom: '16px' }}>This Week</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {WEEK_STATS.map((item) => (
+              {[
+                { label: Submissions, value: String(weekStats.submissions) },
+                { label: Quotes sent, value: String(weekStats.quotes) },
+                { label: Leads won, value: String(weekStats.won) },
+                { label: Conversion, value: weekStats.submissions > 0 ? Math.round((weekStats.won / weekStats.submissions) * 100) + % : — },
+              ].map((item) => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: '#475569' }}>{item.label}</span>
                   <span style={{ fontSize: '14px', fontWeight: 700, color: '#CBD5E1' }}>{item.value}</span>

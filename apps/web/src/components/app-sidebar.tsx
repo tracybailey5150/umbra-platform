@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { getBrowserClient } from "@umbra/auth";
 import {
   LayoutDashboard, Inbox, GitPullRequest, Cpu, BarChart3,
   Settings, Users, Bell, ChevronDown, ChevronRight,
@@ -30,6 +32,20 @@ const NAV_SECTIONS = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const [orgName, setOrgName] = useState<string>('Loading...')
+  const [planTier, setPlanTier] = useState<string>('Free')
+
+  useEffect(() => {
+    const supabase = getBrowserClient()
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.access_token) return
+      try {
+        const res = await fetch('/api/org', { headers: { Authorization: `Bearer ${session.access_token}` } })
+        const d = await res.json()
+        if (d.org?.name) setOrgName(d.org.name)
+      } catch {}
+    })
+  }, [])
 
   return (
     <aside style={{
@@ -78,8 +94,8 @@ export function AppSidebar() {
               fontSize: '10px', fontWeight: 700, color: '#fff',
             }}>A</div>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#94A3B8', lineHeight: 1.2 }}>Acme Services</div>
-              <div style={{ fontSize: '10px', color: '#1E3A5F', marginTop: '1px' }}>Pro Plan</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#94A3B8', lineHeight: 1.2 }}>{orgName}</div>
+              <div style={{ fontSize: '10px', color: '#1E3A5F', marginTop: '1px' }}>{planTier}</div>
             </div>
           </div>
           <ChevronDown size={12} color="#334155" />
@@ -215,7 +231,7 @@ export function AppTopBar() {
     }}>
       {/* Breadcrumb / context */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ fontSize: '11px', color: '#1E3A5F', fontWeight: 500 }}>Acme Services</span>
+        <span style={{ fontSize: '11px', color: '#1E3A5F', fontWeight: 500 }}>Workspace</span>
         <ChevronRight size={11} color="#1E293B" />
         <span style={{ fontSize: '11px', color: '#334155', fontWeight: 500 }}>Workspace</span>
       </div>
