@@ -496,10 +496,10 @@ export default function DashboardPage() {
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#F1F5F9', marginBottom: '16px' }}>This Week</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
-                { label: Submissions, value: String(weekStats.submissions) },
-                { label: Quotes sent, value: String(weekStats.quotes) },
-                { label: Leads won, value: String(weekStats.won) },
-                { label: Conversion, value: weekStats.submissions > 0 ? Math.round((weekStats.won / weekStats.submissions) * 100) + % : — },
+                { label: "Submissions", value: String(weekStats.submissions) },
+                { label: "Quotes sent", value: String(weekStats.quotes) },
+                { label: "Leads won", value: String(weekStats.won) },
+                { label: "Conversion", value: weekStats.submissions > 0 ? Math.round((weekStats.won / weekStats.submissions) * 100) + "%" : "—" },
               ].map((item) => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: '#475569' }}>{item.label}</span>
