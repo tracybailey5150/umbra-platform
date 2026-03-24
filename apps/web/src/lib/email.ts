@@ -1,59 +1,91 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = 'AgentPilot <hello@aiagentpilot.org>'
+const NOTIFY = 'tracybailey5150@icloud.com'
 
-export async function sendWelcomeEmail(to: string, name: string) {
+function from(appName: string) {
+  return `${appName} <noreply@hookvault.app>`
+}
+
+export async function notifyNewSignup(appName: string, email: string, name?: string) {
   try {
     await resend.emails.send({
-      from: FROM,
-      to,
-      subject: 'Welcome to AgentPilot',
+      from: from(appName),
+      to: NOTIFY,
+      subject: `[${appName}] New signup — ${email}`,
       html: `
-        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#0D1117;color:#F8FAFC">
-          <h1 style="font-size:24px;font-weight:700;margin:0 0 8px">Welcome to AgentPilot</h1>
-          <p style="color:#94A3B8;margin:0 0 24px">Hi${name ? ' ' + name : ''}, your account is ready.</p>
-          <p style="color:#CBD5E1;line-height:1.6">
-            You can now create AI agents, manage leads, and automate your follow-ups from one place.
-          </p>
-          <a href="https://aiagentpilot.org/dashboard" style="display:inline-block;margin-top:24px;padding:12px 24px;background:#6366F1;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">
-            Go to Dashboard
-          </a>
-          <p style="margin-top:32px;font-size:12px;color:#475569">
-            Questions? Reply to this email and we read every one.
-          </p>
+        <div style="font-family:sans-serif;padding:24px;max-width:560px">
+          <h2 style="margin:0 0 12px">New signup on ${appName}</h2>
+          <p><strong>Email:</strong> ${email}</p>
+          ${name ? `<p><strong>Name:</strong> ${name}</p>` : ''}
+          <p style="color:#64748B;font-size:12px;margin-top:24px">${new Date().toUTCString()}</p>
         </div>
       `,
     })
   } catch (err) {
-    console.error('[Email] Welcome email failed:', err)
+    console.error(`[Email] notifyNewSignup failed:`, err)
   }
 }
 
-export async function sendSubscriptionConfirmationEmail(to: string, plan: string) {
-  const planLabel = plan === 'pro' ? 'Pro ($79/mo)' : 'Basic ($29/mo)'
+export async function notifyNewSubscription(appName: string, email: string, plan: string, amount: string) {
   try {
     await resend.emails.send({
-      from: FROM,
-      to,
-      subject: 'Your AgentPilot subscription is active',
+      from: from(appName),
+      to: NOTIFY,
+      subject: `[${appName}] New subscription — ${plan} — ${email}`,
       html: `
-        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#0D1117;color:#F8FAFC">
-          <h1 style="font-size:24px;font-weight:700;margin:0 0 8px">You are all set</h1>
-          <p style="color:#94A3B8;margin:0 0 24px">Your <strong style="color:#F8FAFC">${planLabel}</strong> plan is now active.</p>
-          <p style="color:#CBD5E1;line-height:1.6">
-            Your 14-day trial has started. You will not be charged until the trial ends.
-          </p>
-          <a href="https://aiagentpilot.org/dashboard" style="display:inline-block;margin-top:24px;padding:12px 24px;background:#6366F1;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">
-            Go to Dashboard
-          </a>
-          <p style="margin-top:32px;font-size:12px;color:#475569">
-            Manage your subscription anytime from Settings.
-          </p>
+        <div style="font-family:sans-serif;padding:24px;max-width:560px">
+          <h2 style="margin:0 0 12px">New subscription on ${appName}</h2>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Plan:</strong> ${plan}</p>
+          <p><strong>Amount:</strong> ${amount}</p>
+          <p style="color:#64748B;font-size:12px;margin-top:24px">${new Date().toUTCString()}</p>
         </div>
       `,
     })
   } catch (err) {
-    console.error('[Email] Subscription confirmation failed:', err)
+    console.error(`[Email] notifyNewSubscription failed:`, err)
+  }
+}
+
+export async function notifyContactForm(appName: string, senderEmail: string, senderName: string, message: string) {
+  try {
+    await resend.emails.send({
+      from: from(appName),
+      to: NOTIFY,
+      reply_to: senderEmail,
+      subject: `[${appName}] Contact form — ${senderName}`,
+      html: `
+        <div style="font-family:sans-serif;padding:24px;max-width:560px">
+          <h2 style="margin:0 0 12px">Contact form submission on ${appName}</h2>
+          <p><strong>From:</strong> ${senderName} &lt;${senderEmail}&gt;</p>
+          <hr style="border:none;border-top:1px solid #E2E8F0;margin:16px 0">
+          <p style="white-space:pre-wrap">${message}</p>
+          <p style="color:#64748B;font-size:12px;margin-top:24px">${new Date().toUTCString()}</p>
+        </div>
+      `,
+    })
+  } catch (err) {
+    console.error(`[Email] notifyContactForm failed:`, err)
+  }
+}
+
+export async function notifyNewLead(appName: string, email: string, details?: string) {
+  try {
+    await resend.emails.send({
+      from: from(appName),
+      to: NOTIFY,
+      subject: `[${appName}] New lead — ${email}`,
+      html: `
+        <div style="font-family:sans-serif;padding:24px;max-width:560px">
+          <h2 style="margin:0 0 12px">New lead on ${appName}</h2>
+          <p><strong>Email:</strong> ${email}</p>
+          ${details ? `<p><strong>Details:</strong> ${details}</p>` : ''}
+          <p style="color:#64748B;font-size:12px;margin-top:24px">${new Date().toUTCString()}</p>
+        </div>
+      `,
+    })
+  } catch (err) {
+    console.error(`[Email] notifyNewLead failed:`, err)
   }
 }
