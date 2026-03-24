@@ -244,22 +244,22 @@ export default function DashboardPage() {
       // Follow-ups: new submissions older than 2 days
       const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString()
       const { data: staleData } = await supabase
-        .from(submissions)
-        .select(submitter_name, submitter_email, created_at, status)
-        .eq(organization_id, orgId!)
-        .in(status, [new, reviewing])
-        .lt(created_at, twoDaysAgo)
-        .order(created_at, { ascending: true })
+        .from("submissions")
+        .select("submitter_name, submitter_email, created_at, status")
+        .eq("organization_id", orgId!)
+        .in("status", ["new", "reviewing"])
+        .lt("created_at", twoDaysAgo)
+        .order("created_at", { ascending: true })
         .limit(5)
 
       setFollowUps((staleData ?? []).map((s: any) => {
         const daysAgo = Math.floor((Date.now() - new Date(s.created_at).getTime()) / 86400000)
         return {
-          name: s.submitter_name ?? Unknown,
-          email: s.submitter_email ?? ,
+          name: s.submitter_name ?? "Unknown",
+          email: s.submitter_email ?? "",
           daysAgo,
-          status: s.status === reviewing ? In review : No response,
-          urgency: daysAgo >= 4 ? high : medium,
+          status: s.status === "reviewing" ? "In review" : "No response",
+          urgency: daysAgo >= 4 ? "high" : "medium",
         }
       }))
 
@@ -267,9 +267,9 @@ export default function DashboardPage() {
       const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0,0,0,0)
       const weekStartISO = weekStart.toISOString()
       const [{ count: wSubs }, { count: wQuotes }, { count: wWon }] = await Promise.all([
-        supabase.from(submissions).select(id, { count: exact, head: true }).eq(organization_id, orgId!).gte(created_at, weekStartISO),
-        supabase.from(submissions).select(id, { count: exact, head: true }).eq(organization_id, orgId!).eq(status, quoted).gte(updated_at, weekStartISO),
-        supabase.from(submissions).select(id, { count: exact, head: true }).eq(organization_id, orgId!).eq(status, accepted).gte(updated_at, weekStartISO),
+        supabase.from("submissions").select("id", { count: "exact", head: true }).eq("organization_id", orgId!).gte("created_at", weekStartISO),
+        supabase.from("submissions").select("id", { count: "exact", head: true }).eq("organization_id", orgId!).eq("status", "quoted").gte("updated_at", weekStartISO),
+        supabase.from("submissions").select("id", { count: "exact", head: true }).eq("organization_id", orgId!).eq("status", "accepted").gte("updated_at", weekStartISO),
       ])
       setWeekStats({ submissions: wSubs ?? 0, quotes: wQuotes ?? 0, won: wWon ?? 0 })
 
