@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Bot, ExternalLink, Settings, Copy, Zap, Check } from "lucide-react";
+import { Plus, Bot, ExternalLink, Settings, Copy, Zap, Check, Trash2 } from "lucide-react";
 import { getBrowserClient } from "@umbra/auth";
 import { createClient } from "@supabase/supabase-js";
 
@@ -49,6 +49,8 @@ export default function AgentsPage() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = getBrowserClient();
@@ -76,7 +78,6 @@ export default function AgentsPage() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Fetch agents
     const { data, error } = await supabase
       .from("agents")
       .select("*")
@@ -84,35 +85,22 @@ export default function AgentsPage() {
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
-    if (error || !data) {
-      setLoading(false);
-      return;
-    }
+    if (error || !data) { setLoading(false); return; }
 
-    // Fetch submission counts per agent
     const { data: submissionCounts } = await supabase
       .from("submissions")
       .select("agent_id")
       .eq("organization_id", oid)
       .is("deleted_at", null);
 
-    // Count submissions per agent_id
     const countMap: Record<string, number> = {};
     if (submissionCounts) {
       for (const row of submissionCounts) {
-        if (row.agent_id) {
-          countMap[row.agent_id] = (countMap[row.agent_id] || 0) + 1;
-        }
+        if (row.agent_id) countMap[row.agent_id] = (countMap[row.agent_id] || 0) + 1;
       }
     }
 
-    // Merge counts into agents
-    const agentsWithCounts = data.map((agent) => ({
-      ...agent,
-      submissionCount: countMap[agent.id] || 0,
-    }));
-
-    setAgents(agentsWithCounts);
+    setAgents(data.map(a => ({ ...a, submissionCount: countMap[a.id] || 0 })));
     setLoading(false);
   }
 
@@ -127,10 +115,24 @@ export default function AgentsPage() {
       .update({ is_active: !currentVal, updated_at: new Date().toISOString() })
       .eq("id", id);
 
-    if (!error) {
-      setAgents(prev => prev.map(a => a.id === id ? { ...a, is_active: !currentVal } : a));
-    }
+    if (!error) setAgents(prev => prev.map(a => a.id === id ? { ...a, is_active: !currentVal } : a));
     setTogglingId(null);
+  }
+
+  async function deleteAgent(id: string) {
+    setDeletingId(id);
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { error } = await supabase
+      .from("agents")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (!error) setAgents(prev => prev.filter(a => a.id !== id));
+    setDeletingId(null);
+    setConfirmDeleteId(null);
   }
 
   function copyIntakeUrl(slug: string, id: string) {
@@ -217,11 +219,14 @@ export default function AgentsPage() {
             const typeCfg = TYPE_CONFIG[agent.type] ?? TYPE_CONFIG.quote;
             const intakeUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/submit/${agent.slug}`;
             const isCopied = copiedId === agent.id;
+            const isConfirming = confirmDeleteId === agent.id;
+            const isDeleting = deletingId === agent.id;
             return (
               <div key={agent.id} style={{
                 background: "#0C1220", borderRadius: "14px", padding: "20px",
-                border: "1px solid rgba(255,255,255,0.07)",
+                border: `1px solid ${isConfirming ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.07)"}`,
                 boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+                transition: "border 0.15s",
               }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -301,26 +306,67 @@ export default function AgentsPage() {
                 </div>
 
                 {/* Actions */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Link href={`/agents/${agent.id}`} style={{
-                    flex: 1, padding: "8px", borderRadius: "8px", textAlign: "center",
-                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                    color: "#94A3B8", fontSize: "12px", fontWeight: 600, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
-                    textDecoration: "none",
-                  }}>
-                    <Settings size={12} /> Configure
-                  </Link>
-                  <a href={intakeUrl} target="_blank" rel="noreferrer" style={{
-                    flex: 1, padding: "8px", borderRadius: "8px", textAlign: "center",
-                    background: "none", border: "none",
-                    color: "#475569", fontSize: "12px", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
-                    textDecoration: "none",
-                  }}>
-                    <ExternalLink size={12} /> Preview form
-                  </a>
-                </div>
+                {isConfirming ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "12px", color: "#EF4444", flex: 1 }}>Delete this agent?</span>
+                    <button
+                      onClick={() => deleteAgent(agent.id)}
+                      disabled={isDeleting}
+                      style={{
+                        padding: "7px 14px", borderRadius: "7px", fontSize: "12px", fontWeight: 600,
+                        background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
+                        color: "#EF4444", cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.6 : 1,
+                      }}
+                    >
+                      {isDeleting ? "Deleting…" : "Yes, delete"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      style={{
+                        padding: "7px 14px", borderRadius: "7px", fontSize: "12px", fontWeight: 600,
+                        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                        color: "#94A3B8", cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Link href={`/agents/${agent.id}`} style={{
+                      flex: 1, padding: "8px", borderRadius: "8px", textAlign: "center",
+                      background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                      color: "#94A3B8", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                      textDecoration: "none",
+                    }}>
+                      <Settings size={12} /> Configure
+                    </Link>
+                    <a href={intakeUrl} target="_blank" rel="noreferrer" style={{
+                      flex: 1, padding: "8px", borderRadius: "8px", textAlign: "center",
+                      background: "none", border: "none",
+                      color: "#475569", fontSize: "12px", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                      textDecoration: "none",
+                    }}>
+                      <ExternalLink size={12} /> Preview form
+                    </a>
+                    <button
+                      onClick={() => setConfirmDeleteId(agent.id)}
+                      title="Delete agent"
+                      style={{
+                        padding: "8px 10px", borderRadius: "8px",
+                        background: "none", border: "1px solid rgba(255,255,255,0.07)",
+                        color: "#475569", cursor: "pointer", display: "flex", alignItems: "center",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.color = "#EF4444"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; }}
+                      onMouseOut={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#475569"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
