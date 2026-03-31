@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       description: description ?? null,
       isActive: true,
       aiConfig: {
-        provider: "anthropic",
-        model: "claude-sonnet-4-20250514",
+        provider: "openai",
+        model: "gpt-4.1",
         systemPromptTemplate: buildDefaultSystemPrompt(type, industry),
         temperature: 0.1,
         maxTokens: 1024,
