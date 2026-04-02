@@ -40,8 +40,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="font-sans antialiased" style={{ background: '#070C18', color: '#F1F5F9' }}>
-        {children}
+      <body className="font-sans antialiased" style={{ background: '#070C18', color: '#F1F5F9', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <div style={{ flex: 1 }}>{children}</div>
+        <footer style={{ width: '100%', padding: '14px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#050e1a' }}>
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+            © 2026 Tracy Bailey · All Rights Reserved · Proprietary &amp; Confidential
+          </p>
+        </footer>
       </body>
     </html>
   );
